@@ -46,6 +46,7 @@ USAGE:
 
 COMMANDS:
     init [--force]       Initialize Claude config in current repo
+    adopt                Adopt existing config (create manifest without overwriting)
     upgrade [--force]    Upgrade existing config to latest version
     check                Preview what would change (dry run)
     status               Show current installation status
@@ -62,6 +63,9 @@ EXAMPLES:
     # Initialize in a new project
     cd my-project
     claude-setup init
+
+    # Adopt existing config (for projects already set up)
+    claude-setup adopt
 
     # Check for updates
     claude-setup check
@@ -80,7 +84,7 @@ UPGRADE BEHAVIOR:
     - Files you've modified: skipped (use --force to overwrite)
     - New files in updates: automatically created
 
-For more info: https://github.com/yourusername/claude-code-setup
+For more info: https://github.com/bis-code/claude-code-setup
 EOF
 }
 
@@ -193,6 +197,99 @@ cmd_check() {
     install_config "$target" false false true
 }
 
+cmd_adopt() {
+    local target="${1:-.}"
+
+    echo -e "${BLUE}╔════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}║       Claude Setup - Adopt Existing Config                 ║${NC}"
+    echo -e "${BLUE}╚════════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+
+    if [[ ! -d "${target}/.claude" ]]; then
+        echo -e "${RED}Error: No .claude directory found${NC}"
+        echo "This command is for projects that already have Claude configuration."
+        echo "Use 'claude-setup init' for new projects."
+        exit 1
+    fi
+
+    if [[ -f "${target}/.claude/manifest.json" ]]; then
+        echo -e "${YELLOW}Manifest already exists.${NC}"
+        echo "Use 'claude-setup upgrade' to update, or delete manifest to re-adopt."
+        exit 1
+    fi
+
+    echo -e "${YELLOW}Scanning existing configuration...${NC}"
+    echo ""
+
+    local count=0
+    local manifest="${target}/.claude/manifest.json"
+
+    # Start manifest
+    mkdir -p "${target}/.claude"
+    cat > "$manifest" << EOF
+{
+  "version": "$VERSION",
+  "generated": "$(date -u '+%Y-%m-%dT%H:%M:%SZ')",
+  "generator": "claude-setup",
+  "files": [
+EOF
+
+    local first=true
+
+    # Scan all .claude files
+    for file in $(find "${target}/.claude" -type f ! -name "manifest.json" 2>/dev/null | sort); do
+        local relpath="${file#${target}/}"
+        local checksum=$(shasum -a 256 "$file" | cut -d' ' -f1)
+
+        if $first; then
+            first=false
+        else
+            echo "," >> "$manifest"
+        fi
+        printf '    {"path": "%s", "checksum": "%s"}' "$relpath" "$checksum" >> "$manifest"
+
+        echo -e "  ${GREEN}✓${NC} $relpath"
+        count=$((count + 1))
+    done
+
+    # Also check for CLAUDE.md
+    if [[ -f "${target}/CLAUDE.md" ]]; then
+        local checksum=$(shasum -a 256 "${target}/CLAUDE.md" | cut -d' ' -f1)
+        if ! $first; then
+            echo "," >> "$manifest"
+        fi
+        printf '    {"path": "CLAUDE.md", "checksum": "%s"}' "$checksum" >> "$manifest"
+        echo -e "  ${GREEN}✓${NC} CLAUDE.md"
+        count=$((count + 1))
+    fi
+
+    # Close manifest
+    cat >> "$manifest" << 'EOF'
+
+  ]
+}
+EOF
+
+    echo ""
+
+    if [[ $count -eq 0 ]]; then
+        echo -e "${RED}No files found to adopt.${NC}"
+        rm -f "$manifest"
+        exit 1
+    fi
+
+    echo -e "${GREEN}╔════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${GREEN}║       Adoption Complete!                                   ║${NC}"
+    echo -e "${GREEN}╚════════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+    echo -e "  ${GREEN}Adopted:${NC} ${count} files"
+    echo -e "  ${CYAN}Version:${NC} v${VERSION}"
+    echo ""
+    echo "Your existing config is now tracked."
+    echo "Run 'claude-setup check' to see available updates."
+    echo ""
+}
+
 cmd_export() {
     local source="$1"
 
@@ -233,6 +330,9 @@ main() {
     case "$command" in
         init)
             cmd_init "$@"
+            ;;
+        adopt)
+            cmd_adopt "$@"
             ;;
         upgrade)
             cmd_upgrade "$@"
