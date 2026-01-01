@@ -44,6 +44,25 @@ Claude operates as: **Senior Engineer + QA Engineer + Product Collaborator**
 
 ---
 
+## Efficient Searching (Token Optimization)
+
+**Always use `/search` command** when looking for files or code:
+
+```
+/search user authentication    # Find files/functions
+/search --files config         # Find files by name
+/search --def handleLogin      # Find function definitions
+/search --content TODO         # Find content in files
+```
+
+**Check project index first**: `.claude/project-index.json`
+- Contains entry points, key files, directory purposes
+- If missing, run `/index` to generate it
+
+**Never use raw Glob/Grep** without consulting the index first.
+
+---
+
 ## Detailed Rules
 
 See `.claude/rules/` for comprehensive guidelines:
@@ -56,6 +75,7 @@ See `.claude/rules/` for comprehensive guidelines:
 | `security.md` | Security & abuse prevention |
 | `lead-reasoning.md` | Decision documentation |
 | `operating-modes.md` | PLAN, IMPLEMENT, TEST, QA modes |
+| `efficient-search.md` | Search optimization, /search usage |
 
 ---
 
