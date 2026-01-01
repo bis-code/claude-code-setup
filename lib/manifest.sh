@@ -15,6 +15,18 @@ get_installed_version() {
     fi
 }
 
+# Get installed preset from manifest
+get_installed_preset() {
+    local target="$1"
+    local manifest="${target}/.claude/manifest.json"
+
+    if [[ -f "$manifest" ]]; then
+        grep -o '"preset": *"[^"]*"' "$manifest" | cut -d'"' -f4 || echo "full"
+    else
+        echo "full"
+    fi
+}
+
 # Get file checksum from manifest
 get_manifest_checksum() {
     local target="$1"
@@ -62,7 +74,8 @@ is_file_modified() {
 write_manifest() {
     local target="$1"
     local version="$2"
-    shift 2
+    local preset="$3"
+    shift 3
     local files=("$@")
 
     local manifest="${target}/.claude/manifest.json"
@@ -71,6 +84,7 @@ write_manifest() {
     cat > "$manifest" << EOF
 {
   "version": "$version",
+  "preset": "$preset",
   "generated": "$(date -u '+%Y-%m-%dT%H:%M:%SZ')",
   "generator": "claude-setup",
   "files": [

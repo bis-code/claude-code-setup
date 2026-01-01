@@ -10,12 +10,28 @@ else
     TEMPLATE_DIR="${LIB_DIR}/../templates"
 fi
 
+# Core rules included in all presets
+CORE_RULES=(
+    "core-constraints.md"
+    "git-workflow.md"
+    "security.md"
+)
+
+# Rules by preset (in addition to core)
+declare -A PRESET_RULES
+PRESET_RULES[full]="daily-workflow.md lead-reasoning.md operating-modes.md setup-sync.md testing.md"
+PRESET_RULES[base]=""
+PRESET_RULES[hardhat]="hardhat.md"
+PRESET_RULES[unity]="unity.md"
+PRESET_RULES[react]="react.md"
+
 # Install configuration to target directory
 install_config() {
     local target="$1"
     local force="${2:-false}"
     local minimal="${3:-false}"
     local dry_run="${4:-false}"
+    local preset="${5:-full}"
 
     reset_tracking
 
@@ -29,13 +45,15 @@ install_config() {
     echo -e "${YELLOW}Processing files...${NC}"
     echo ""
 
-    # Install CLAUDE.md only if it doesn't exist
-    if [[ ! -f "${target}/CLAUDE.md" ]]; then
-        echo -e "${BLUE}Creating CLAUDE.md...${NC}"
-        local claude_md_content=$(cat "${TEMPLATE_DIR}/CLAUDE.md")
-        create_managed_file "$target" "CLAUDE.md" "$claude_md_content" "Main instructions" "$force" "$dry_run"
-    else
-        echo -e "${BLUE}CLAUDE.md exists - skipping (customize as needed)${NC}"
+    # Install CLAUDE.md only if it doesn't exist (skip for non-full presets)
+    if [[ "$preset" == "full" ]]; then
+        if [[ ! -f "${target}/CLAUDE.md" ]]; then
+            echo -e "${BLUE}Creating CLAUDE.md...${NC}"
+            local claude_md_content=$(cat "${TEMPLATE_DIR}/CLAUDE.md")
+            create_managed_file "$target" "CLAUDE.md" "$claude_md_content" "Main instructions" "$force" "$dry_run"
+        else
+            echo -e "${BLUE}CLAUDE.md exists - skipping (customize as needed)${NC}"
+        fi
     fi
 
     echo ""
@@ -44,24 +62,35 @@ install_config() {
     # Core files (always installed)
     install_template "$target" ".claude/settings.json" "Settings" "$force" "$dry_run"
 
-    # Hooks
-    for file in "${TEMPLATE_DIR}/.claude/hooks/"*.sh; do
-        if [[ -f "$file" ]]; then
-            local name=$(basename "$file")
-            install_template "$target" ".claude/hooks/${name}" "Hook" "$force" "$dry_run"
+    # Hooks (only for full preset)
+    if [[ "$preset" == "full" ]]; then
+        for file in "${TEMPLATE_DIR}/.claude/hooks/"*.sh; do
+            if [[ -f "$file" ]]; then
+                local name=$(basename "$file")
+                install_template "$target" ".claude/hooks/${name}" "Hook" "$force" "$dry_run"
+            fi
+        done
+    fi
+
+    # Core rules (always installed)
+    for rule in "${CORE_RULES[@]}"; do
+        if [[ -f "${TEMPLATE_DIR}/.claude/rules/${rule}" ]]; then
+            install_template "$target" ".claude/rules/${rule}" "Rule" "$force" "$dry_run"
         fi
     done
 
-    # Rules (core)
-    for file in "${TEMPLATE_DIR}/.claude/rules/"*.md; do
-        if [[ -f "$file" ]]; then
-            local name=$(basename "$file")
-            install_template "$target" ".claude/rules/${name}" "Rule" "$force" "$dry_run"
+    # Preset-specific rules
+    local preset_rules="${PRESET_RULES[$preset]}"
+    for rule in $preset_rules; do
+        if [[ -f "${TEMPLATE_DIR}/.claude/rules/${rule}" ]]; then
+            install_template "$target" ".claude/rules/${rule}" "Rule" "$force" "$dry_run"
+        elif [[ -f "${TEMPLATE_DIR}/.claude/presets/${preset}/${rule}" ]]; then
+            install_preset_template "$target" "$preset" "$rule" "Rule" "$force" "$dry_run"
         fi
     done
 
-    # Optional files (skip if --minimal)
-    if ! $minimal; then
+    # Optional files (only for full preset, skip if --minimal)
+    if [[ "$preset" == "full" ]] && ! $minimal; then
         # Commands
         for file in "${TEMPLATE_DIR}/.claude/commands/"*.md; do
             if [[ -f "$file" ]]; then
@@ -95,16 +124,18 @@ install_config() {
     fi
 
     # Make hooks executable
-    echo ""
-    echo -e "${BLUE}Making hooks executable...${NC}"
-    if ! $dry_run; then
-        chmod +x "${target}"/.claude/hooks/*.sh 2>/dev/null || true
-        echo -e "  ${GREEN}✓${NC} Hooks are now executable"
+    if [[ "$preset" == "full" ]]; then
+        echo ""
+        echo -e "${BLUE}Making hooks executable...${NC}"
+        if ! $dry_run; then
+            chmod +x "${target}"/.claude/hooks/*.sh 2>/dev/null || true
+            echo -e "  ${GREEN}✓${NC} Hooks are now executable"
+        fi
     fi
 
     # Write manifest
     if ! $dry_run; then
-        write_manifest "$target" "$VERSION" "${MANAGED_FILES[@]}"
+        write_manifest "$target" "$VERSION" "$preset" "${MANAGED_FILES[@]}"
     fi
 
     # Print summary
@@ -127,6 +158,25 @@ install_template() {
 
     local content=$(cat "$template_path")
     create_managed_file "$target" "$filepath" "$content" "$description" "$force" "$dry_run"
+}
+
+# Install a preset-specific template file
+install_preset_template() {
+    local target="$1"
+    local preset="$2"
+    local filename="$3"
+    local description="$4"
+    local force="$5"
+    local dry_run="$6"
+
+    local template_path="${TEMPLATE_DIR}/.claude/presets/${preset}/${filename}"
+
+    if [[ ! -f "$template_path" ]]; then
+        return
+    fi
+
+    local content=$(cat "$template_path")
+    create_managed_file "$target" ".claude/rules/${filename}" "$content" "$description" "$force" "$dry_run"
 }
 
 # Export configuration from a source repo

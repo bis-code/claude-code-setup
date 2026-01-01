@@ -15,7 +15,7 @@
 
 set -euo pipefail
 
-VERSION="0.1.3"
+VERSION="0.2.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LIB_DIR="${SCRIPT_DIR}/../lib"
 
@@ -56,13 +56,31 @@ COMMANDS:
 OPTIONS:
     --force              Overwrite all files, including modified ones
     --minimal            Skip optional files (commands, skills, checklists)
+    --preset <name>      Use a specific preset (see PRESETS below)
     --target <dir>       Target directory (default: current)
     -h, --help           Show this help message
+
+PRESETS:
+    full                 All rules, hooks, commands, skills (default)
+    base                 Core rules only (for monorepo root)
+    hardhat              Hardhat/Solidity/Web3 rules
+    unity                Unity/C# game development rules
+    react                React/TypeScript frontend rules
 
 EXAMPLES:
     # Initialize in a new project
     cd my-project
     claude-setup init
+
+    # Initialize with a specific preset
+    claude-setup init --preset go
+
+    # Monorepo setup (e.g., web3 game project)
+    cd game-project
+    claude-setup init --preset base             # Root: shared rules
+    cd deployments && claude-setup init --preset hardhat
+    cd ../game && claude-setup init --preset unity
+    cd ../frontend && claude-setup init --preset react
 
     # Adopt existing config (for projects already set up)
     claude-setup adopt
@@ -75,9 +93,6 @@ EXAMPLES:
 
     # Force upgrade everything
     claude-setup upgrade --force
-
-    # Export from your main config repo
-    claude-setup export ~/projects/my-config-repo
 
 UPGRADE BEHAVIOR:
     - Files you haven't modified: automatically updated
@@ -148,16 +163,24 @@ cmd_status() {
 cmd_init() {
     local force=false
     local minimal=false
+    local preset="full"
     local target="."
 
     while [[ $# -gt 0 ]]; do
         case $1 in
             --force) force=true; shift ;;
             --minimal) minimal=true; shift ;;
+            --preset) preset="$2"; shift 2 ;;
             --target) target="$2"; shift 2 ;;
             *) echo -e "${RED}Unknown option: $1${NC}"; exit 1 ;;
         esac
     done
+
+    # Validate preset
+    case "$preset" in
+        full|base|hardhat|unity|react) ;;
+        *) echo -e "${RED}Unknown preset: $preset${NC}"; echo "Available: full, base, hardhat, unity, react"; exit 1 ;;
+    esac
 
     local manifest="${target}/.claude/manifest.json"
 
@@ -170,7 +193,12 @@ cmd_init() {
     echo -e "${BLUE}╚════════════════════════════════════════════════════════════╝${NC}"
     echo ""
 
-    install_config "$target" "$force" "$minimal" false
+    if [[ "$preset" != "full" ]]; then
+        echo -e "Preset: ${CYAN}$preset${NC}"
+        echo ""
+    fi
+
+    install_config "$target" "$force" "$minimal" false "$preset"
 }
 
 cmd_upgrade() {
@@ -179,13 +207,21 @@ cmd_upgrade() {
 
 cmd_check() {
     local target="."
+    local preset=""
 
     while [[ $# -gt 0 ]]; do
         case $1 in
             --target) target="$2"; shift 2 ;;
+            --preset) preset="$2"; shift 2 ;;
             *) shift ;;
         esac
     done
+
+    # Read preset from manifest if not specified
+    if [[ -z "$preset" ]]; then
+        preset=$(get_installed_preset "$target")
+    fi
+    preset="${preset:-full}"
 
     echo -e "${BLUE}╔════════════════════════════════════════════════════════════╗${NC}"
     echo -e "${BLUE}║       Claude Setup - Check                                 ║${NC}"
@@ -194,7 +230,7 @@ cmd_check() {
     echo -e "${YELLOW}CHECK MODE - Showing what would change${NC}"
     echo ""
 
-    install_config "$target" false false true
+    install_config "$target" false false true "$preset"
 }
 
 cmd_adopt() {
