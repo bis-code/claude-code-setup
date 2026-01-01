@@ -1,12 +1,26 @@
 # Efficient Codebase Search
 
+## IMPORTANT: Use /search Command
+
+When you need to find files, functions, or content in this codebase:
+1. **Always use `/search <query>` first** - it's optimized for this project
+2. **Check project index** before manual Glob/Grep
+3. **Never use raw Glob/Grep** without consulting the index
+
+Example:
+- Finding auth logic? → `/search authentication` or `/search --def AuthService`
+- Finding config? → `/search --files config`
+- Finding TODO items? → `/search --content TODO`
+
 ## Project Index
 If `.claude/project-index.json` exists, read it first for:
 - Entry points to prioritize
 - Directory purposes
 - Key files locations
 
-## Search Strategy
+If no index exists, run `/index` to generate one.
+
+## Search Strategy (for /search implementation)
 
 ### 1. Always Limit Results
 - Glob: max 10 files
