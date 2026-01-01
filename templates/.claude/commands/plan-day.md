@@ -17,6 +17,25 @@ Plan today's work using time-boxed, lens-enforced decision making.
 
 ## Execution
 
+### Step 0: Initialize Project Index (Auto)
+
+Before planning, check if project index exists:
+
+```bash
+# Check for index
+if [ ! -f ".claude/project-index.json" ]; then
+    echo "No project index found. Generating..."
+    # Trigger /index command
+fi
+```
+
+**Actions:**
+1. If `.claude/project-index.json` doesn't exist → Generate it (mono or multi-repo)
+2. If index exists but is stale (`stale: true`) → Offer to update
+3. If index exists and fresh → Continue to planning
+
+This ensures efficient searching throughout the work session.
+
 ### Step 1: Gather Candidates
 
 **Default**: Fetch GitHub issues labeled `claude-ready`

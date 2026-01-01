@@ -6,6 +6,30 @@ Generate a project index file for faster navigation.
 - `/index` - Generate index for current project
 - `/index --update` - Update existing index
 - `/index --show` - Show current index
+- `/index --multi` - For multi-repo projects (create index in each sub-repo)
+- `/index --mono` - For monorepos (single index with package mapping)
+
+## Project Types
+
+### Multi-Repo (e.g., game project)
+```
+game/
+├── deployments/.claude/project-index.json
+├── web3-backend/.claude/project-index.json
+├── frontend/.claude/project-index.json
+└── game/.claude/project-index.json
+```
+Each repo has its own index. Run `/index` in each sub-repo.
+
+### Monorepo (e.g., processing-videos)
+```
+processing-videos/
+├── .claude/project-index.json  # Root index with packages
+├── packages/api/
+├── packages/worker/
+└── packages/shared/
+```
+Single index maps all packages/workspaces.
 
 ## What It Does
 
@@ -14,6 +38,8 @@ Creates `.claude/project-index.json` containing:
 2. Key entry points
 3. Important files and their purposes
 4. Directory purposes
+5. (Monorepo) Package/workspace mapping
+6. (Multi-repo) Cross-repo dependencies
 
 ## Instructions
 
@@ -57,6 +83,58 @@ Create `.claude/project-index.json`:
 ### 4. Save Index
 Write to `.claude/project-index.json`
 Add to .gitignore if not present
+
+## Multi-Repo Index (--multi)
+
+For projects with multiple git repos (like game/):
+
+1. Identify all sub-repos (directories with .git)
+2. Generate index for EACH sub-repo
+3. Create root index with repo references:
+
+```json
+{
+  "name": "game-project",
+  "type": "multi-repo",
+  "repos": {
+    "deployments": {"path": "deployments/", "type": "hardhat", "purpose": "Deployment configs"},
+    "web3-backend": {"path": "web3-backend/", "type": "dotnet-hardhat", "purpose": "C# API + Solidity"},
+    "game": {"path": "game/", "type": "unity", "purpose": "Unity game client"},
+    "frontend": {"path": "frontend/", "type": "react", "purpose": "Web dashboard"}
+  },
+  "crossRepoDeps": {
+    "frontend → web3-backend": "API calls",
+    "game → web3-backend": "Smart contract interactions",
+    "deployments → all": "Docker orchestration"
+  }
+}
+```
+
+## Monorepo Index (--mono)
+
+For monorepos with workspaces/packages:
+
+1. Find workspace config (package.json workspaces, pnpm-workspace.yaml, etc.)
+2. Map all packages with their purposes
+3. Create single comprehensive index:
+
+```json
+{
+  "name": "processing-videos",
+  "type": "monorepo",
+  "workspaceConfig": "pnpm-workspace.yaml",
+  "packages": {
+    "@pv/api": {"path": "packages/api/", "purpose": "REST API", "entry": "src/index.ts"},
+    "@pv/worker": {"path": "packages/worker/", "purpose": "Video processing", "entry": "src/main.ts"},
+    "@pv/shared": {"path": "packages/shared/", "purpose": "Shared utilities", "entry": "src/index.ts"}
+  },
+  "sharedDeps": ["@pv/shared"],
+  "entryPoints": {
+    "packages/api/src/index.ts": "API server entry",
+    "packages/worker/src/main.ts": "Worker entry"
+  }
+}
+```
 
 ## Token Optimization
 
