@@ -2,6 +2,15 @@
 
 Efficient codebase search that minimizes token usage.
 
+## First: Check Project Index
+
+If `.claude/project-index.json` exists, read it first:
+1. Use `entryPoints` to prioritize search locations
+2. Use `structure` to skip irrelevant directories
+3. Use `keyFiles` for definition lookups
+
+If index doesn't exist, suggest running `/index` for faster future searches.
+
 ## Strategy
 
 ### 1. File Search (--files or implicit)

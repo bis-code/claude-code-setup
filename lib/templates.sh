@@ -19,11 +19,11 @@ CORE_RULES=(
 
 # Rules by preset (in addition to core)
 declare -A PRESET_RULES
-PRESET_RULES[full]="daily-workflow.md lead-reasoning.md operating-modes.md setup-sync.md testing.md"
+PRESET_RULES[full]="daily-workflow.md lead-reasoning.md operating-modes.md setup-sync.md testing.md efficient-search.md"
 PRESET_RULES[base]=""
-PRESET_RULES[hardhat]="hardhat.md"
-PRESET_RULES[unity]="unity.md"
-PRESET_RULES[react]="react.md"
+PRESET_RULES[hardhat]="hardhat.md efficient-search.md"
+PRESET_RULES[unity]="unity.md efficient-search.md"
+PRESET_RULES[react]="react.md efficient-search.md"
 PRESET_RULES[slim]="slim-rules.md"  # Single consolidated file, no core rules
 
 # Install configuration to target directory
