@@ -22,7 +22,8 @@ get_manifest_checksum() {
     local manifest="${target}/.claude/manifest.json"
 
     if [[ -f "$manifest" ]]; then
-        grep -A1 "\"path\": \"$filepath\"" "$manifest" | grep checksum | cut -d'"' -f4 || echo ""
+        # Extract checksum from the line containing this file path
+        grep "\"path\": \"$filepath\"" "$manifest" | grep -o '"checksum": "[^"]*"' | cut -d'"' -f4 || echo ""
     else
         echo ""
     fi
