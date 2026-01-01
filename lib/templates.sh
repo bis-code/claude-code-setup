@@ -3,8 +3,12 @@
 # templates.sh - Configuration templates and installation logic
 #
 
-# Template directory (relative to lib)
-TEMPLATE_DIR="${LIB_DIR}/../templates"
+# Template directory - check homebrew layout first, then fallback to dev layout
+if [[ -d "${LIB_DIR}/templates" ]]; then
+    TEMPLATE_DIR="${LIB_DIR}/templates"
+else
+    TEMPLATE_DIR="${LIB_DIR}/../templates"
+fi
 
 # Install configuration to target directory
 install_config() {
