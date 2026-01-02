@@ -107,6 +107,14 @@ install_config() {
             local relpath="${file#${TEMPLATE_DIR}/}"
             install_template "$target" "$relpath" "Skill" "$force" "$dry_run"
         done
+
+        # Agents
+        for file in "${TEMPLATE_DIR}/.claude/agents/"*.md; do
+            if [[ -f "$file" ]]; then
+                local name=$(basename "$file")
+                install_template "$target" ".claude/agents/${name}" "Agent" "$force" "$dry_run"
+            fi
+        done
     fi
 
     # Checklists (only for full preset)
