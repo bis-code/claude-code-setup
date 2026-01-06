@@ -139,34 +139,49 @@ show_startup_banner() {
         tracked_count=$(jq '.repos | length' "$CLAW_HOME/repos.json" 2>/dev/null || echo 0)
     fi
 
+    # Box width: 78 chars total (76 inside + 2 for borders)
+    local W=76
+
+    # Helper to print a padded line (strips ANSI codes for length calculation)
+    print_line() {
+        local content="$1"
+        # Strip ANSI escape codes for length calculation
+        local stripped
+        stripped=$(printf '%s' "$content" | sed $'s/\033\\[[0-9;]*m//g')
+        local len=${#stripped}
+        local pad=$((W - len))
+        [[ $pad -lt 0 ]] && pad=0
+        printf "${CYAN}│${NC}%s%*s${CYAN}│${NC}\n" "$content" "$pad" ""
+    }
+
     echo ""
-    printf "${CYAN}╭─ ${BOLD}claw${NC}${CYAN} v${VERSION} ───────────────────────────────────────────────────────────╮${NC}\n"
-    printf "${CYAN}│${NC}                                                                          ${CYAN}│${NC}\n"
-    printf "${CYAN}│${NC}      ${CYAN}%s${NC}              ${CYAN}${BOLD}Commands${NC}                                     ${CYAN}│${NC}\n" '/\___/\'
-    printf "${CYAN}│${NC}     ${CYAN}(  o o  )${NC}             /plan-day    Plan from GitHub issues          ${CYAN}│${NC}\n"
-    printf "${CYAN}│${NC}     ${CYAN}(   >   )${NC}             /brainstorm  Multi-perspective analysis       ${CYAN}│${NC}\n"
-    printf "${CYAN}│${NC}      ${CYAN}%s${NC}              /ship-day    Create PR when done              ${CYAN}│${NC}\n" '/|   |\'
-    printf "${CYAN}│${NC}     ${CYAN}(_|   |_)${NC}                                                           ${CYAN}│${NC}\n"
-    printf "${CYAN}│${NC}                                                                          ${CYAN}│${NC}\n"
-    printf "${CYAN}│${NC}  ${BOLD}Command Line${NC}              ${CYAN}${BOLD}Status${NC}                                       ${CYAN}│${NC}\n"
-    printf "${CYAN}│${NC}  ${BOLD}Automated Workflow${NC}        Claude: ${claude_status_color}${claude_status_icon} ready${NC} (${claude_version})            ${CYAN}│${NC}\n"
+    printf "${CYAN}╭─ claw v${VERSION} "; printf '─%.0s' {1..62}; printf "╮${NC}\n"
+    print_line ""
+    print_line "    /\\___/\\             ${CYAN}${BOLD}Commands${NC}"
+    print_line "   (  o o  )            /plan-day    Plan from GitHub issues"
+    print_line "   (   >   )            /brainstorm  Multi-perspective analysis"
+    print_line "    /|   |\\             /ship-day    Create PR when done"
+    print_line "   (_|   |_)"
+    print_line ""
+    print_line " ${BOLD}Command Line${NC}           ${CYAN}${BOLD}Status${NC}"
+    print_line " ${BOLD}Automated Workflow${NC}     Claude: ${claude_status_color}${claude_status_icon}${NC} ready"
 
     # Show current repo
     if [[ -n "$current_repo" ]]; then
-        printf "${CYAN}│${NC}                            Current: ${GREEN}%-24s${NC}${CYAN}│${NC}\n" "$current_repo"
+        print_line "                        Current: ${GREEN}${current_repo}${NC}"
     else
-        printf "${CYAN}│${NC}                            ${GRAY}Not in a git repo${NC}                        ${CYAN}│${NC}\n"
+        print_line "                        ${GRAY}Not in a git repo${NC}"
     fi
 
     # Show tracked repos
     if [[ $tracked_count -gt 0 ]]; then
-        printf "${CYAN}│${NC}                            Tracked: ${CYAN}%-23s${NC}${CYAN}│${NC}\n" "${tracked_count} repo(s)"
+        print_line "                        Tracked: ${CYAN}${tracked_count} repo(s)${NC}"
     else
-        printf "${CYAN}│${NC}                            ${GRAY}No repos tracked${NC}                         ${CYAN}│${NC}\n"
+        print_line "                        ${GRAY}No repos tracked${NC}"
     fi
 
-    printf "${CYAN}│${NC}                                                                          ${CYAN}│${NC}\n"
-    printf "${CYAN}╰──────────────────────────────────────────────────────────────────────────╯${NC}\n"
+    print_line ""
+    printf "${CYAN}╰"; printf '─%.0s' {1..76}; printf "╯${NC}\n"
     echo ""
 }
 
