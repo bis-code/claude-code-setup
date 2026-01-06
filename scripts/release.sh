@@ -81,7 +81,7 @@ fi
 # Commit the version bump
 echo "Committing version bump..."
 git -C "$PROJECT_ROOT" add bin/claw
-git -C "$PROJECT_ROOT" commit --no-gpg-sign -m "chore: bump version to ${VERSION}"
+git -C "$PROJECT_ROOT" commit --no-gpg-sign --author="bis-code <baicoianuioansorin@gmail.com>" -m "chore: bump version to ${VERSION}"
 
 # Create annotated tag
 echo "Creating tag ${TAG}..."
