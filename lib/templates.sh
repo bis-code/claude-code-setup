@@ -18,14 +18,19 @@ CORE_RULES=(
     "security.md"
 )
 
-# Rules by preset (in addition to core)
-declare -A PRESET_RULES
-PRESET_RULES[full]="daily-workflow.md lead-reasoning.md operating-modes.md setup-sync.md testing.md efficient-search.md"
-PRESET_RULES[base]=""
-PRESET_RULES[hardhat]="hardhat.md efficient-search.md"
-PRESET_RULES[unity]="unity.md efficient-search.md"
-PRESET_RULES[react]="react.md efficient-search.md"
-PRESET_RULES[slim]="slim-rules.md"  # Single consolidated file, no core rules
+# Get rules for a preset (Bash 3.x compatible - no associative arrays)
+get_preset_rules() {
+    local preset="$1"
+    case "$preset" in
+        full) echo "daily-workflow.md lead-reasoning.md operating-modes.md setup-sync.md testing.md efficient-search.md" ;;
+        base) echo "" ;;
+        hardhat) echo "hardhat.md efficient-search.md" ;;
+        unity) echo "unity.md efficient-search.md" ;;
+        react) echo "react.md efficient-search.md" ;;
+        slim) echo "slim-rules.md" ;;  # Single consolidated file, no core rules
+        *) echo "" ;;
+    esac
+}
 
 # Install configuration to target directory
 install_config() {
@@ -84,7 +89,8 @@ install_config() {
     fi
 
     # Preset-specific rules
-    local preset_rules="${PRESET_RULES[$preset]}"
+    local preset_rules
+    preset_rules=$(get_preset_rules "$preset")
     for rule in $preset_rules; do
         if [[ -f "${TEMPLATE_DIR}/.claude/rules/${rule}" ]]; then
             install_template "$target" ".claude/rules/${rule}" "Rule" "$force" "$dry_run"
