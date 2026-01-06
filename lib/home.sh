@@ -300,14 +300,16 @@ build_system_prompt() {
         prompt+=$'\n\n'
     fi
 
-    # Add requested rules
-    for rule in "${rules[@]}"; do
-        if [[ -f "$CLAW_RULES_DIR/$rule.md" ]]; then
-            prompt+="---"$'\n'
-            prompt+=$(cat "$CLAW_RULES_DIR/$rule.md")
-            prompt+=$'\n\n'
-        fi
-    done
+    # Add requested rules (use ${rules[@]+...} to handle empty array with set -u)
+    if [[ ${#rules[@]} -gt 0 ]]; then
+        for rule in "${rules[@]}"; do
+            if [[ -f "$CLAW_RULES_DIR/$rule.md" ]]; then
+                prompt+="---"$'\n'
+                prompt+=$(cat "$CLAW_RULES_DIR/$rule.md")
+                prompt+=$'\n\n'
+            fi
+        done
+    fi
 
     echo "$prompt"
 }
