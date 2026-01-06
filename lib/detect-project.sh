@@ -398,15 +398,6 @@ detect_cross_repo_dependencies() {
     local root="${1:-.}"
     local deps=()
 
-    # Get multi-repo info
-    local multi_json
-    multi_json=$(detect_multi_repo "$root")
-
-    if ! echo "$multi_json" | grep -q '"detected": true'; then
-        echo "[]"
-        return 0
-    fi
-
     local parent_dir
     parent_dir=$(dirname "$(realpath "$root" 2>/dev/null || echo "$root")")
     local current_name
