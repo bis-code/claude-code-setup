@@ -19,9 +19,10 @@ VERSION="0.6.0"
 CLAW_HOME="${CLAW_HOME:-$HOME/.claw}"
 CLAUDE_HOME="$HOME/.claude"
 
-# Source repos module
+# Source modules
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../lib/repos.sh"
+source "${SCRIPT_DIR}/../lib/leann-mcp.sh"
 
 # ============================================================================
 # Colors
@@ -54,6 +55,10 @@ ensure_setup() {
     if [[ -d "$CLAUDE_HOME" ]] && [[ ! -f "$CLAW_HOME/.commands-installed" ]]; then
         install_global_commands
     fi
+
+    # Ensure leann MCP is set up (first-run only)
+    # This provides semantic code search capabilities
+    ensure_leann_setup || true  # Don't fail claw if leann setup fails
 }
 
 install_global_commands() {
@@ -280,10 +285,15 @@ Multi-repo tracking:
   claw repos --help             More info
 
 Claw adds:
+  - Semantic code search via leann MCP (auto-installed on first run)
   - Global commands: /plan-day, /ship-day, /brainstorm, etc.
   - Multi-repo: aggregate issues across tracked repos
   - Session ID shown on exit for easy resume
   - Available in any project without setup
+
+Setup:
+  claw --setup-leann            Reinstall/reconfigure leann MCP
+  claw --update                 Update global commands
 
 Config: ~/.claw/
 EOF
@@ -295,6 +305,11 @@ EOF
             ensure_setup
             echo "Commands updated."
             exit 0
+            ;;
+        --setup-leann)
+            # Force reinstall leann MCP
+            reinstall_leann_mcp
+            exit $?
             ;;
         repos)
             # Multi-repo management
