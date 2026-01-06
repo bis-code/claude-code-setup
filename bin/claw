@@ -28,12 +28,12 @@ source "${SCRIPT_DIR}/../lib/repos.sh"
 # ============================================================================
 
 if [[ -t 1 ]]; then
-    CYAN='\033[0;36m'
-    GREEN='\033[0;32m'
-    RED='\033[0;31m'
-    GRAY='\033[0;90m'
-    BOLD='\033[1m'
-    NC='\033[0m'
+    CYAN=$'\033[0;36m'
+    GREEN=$'\033[0;32m'
+    RED=$'\033[0;31m'
+    GRAY=$'\033[0;90m'
+    BOLD=$'\033[1m'
+    NC=$'\033[0m'
 else
     CYAN='' GREEN='' RED='' GRAY='' BOLD='' NC=''
 fi
@@ -123,10 +123,12 @@ show_exit_message() {
 show_startup_banner() {
     # Gather info
     local claude_version="not installed"
-    local claude_status="${RED}✗ not found${NC}"
+    local claude_status_icon="✗"
+    local claude_status_color="$RED"
     if command -v claude &>/dev/null; then
         claude_version=$(claude --version 2>/dev/null | head -1 | sed 's/claude //' || echo "unknown")
-        claude_status="${GREEN}✓ ready${NC}"
+        claude_status_icon="✓"
+        claude_status_color="$GREEN"
     fi
 
     local current_repo
@@ -137,38 +139,34 @@ show_startup_banner() {
         tracked_count=$(jq '.repos | length' "$CLAW_HOME/repos.json" 2>/dev/null || echo 0)
     fi
 
-    # Teal/Cyan color scheme
-    local TEAL='\033[0;96m'
-    local DIM='\033[2m'
-
     echo ""
-    echo -e "${TEAL}╭─${NC} ${BOLD}claw${NC} ${DIM}v${VERSION}${NC} ${TEAL}───────────────────────────────────────────────────────────────╮${NC}"
-    echo -e "${TEAL}│${NC}                                                                            ${TEAL}│${NC}"
-    echo -e "${TEAL}│${NC}      ${TEAL}/\\___/\\${NC}                ${TEAL}${BOLD}Commands${NC}                                     ${TEAL}│${NC}"
-    echo -e "${TEAL}│${NC}     ${TEAL}(  • •  )${NC}               ${DIM}/plan-day${NC}    Plan from GitHub issues          ${TEAL}│${NC}"
-    echo -e "${TEAL}│${NC}     ${TEAL}(   ∧   )${NC}               ${DIM}/brainstorm${NC}  Multi-perspective analysis       ${TEAL}│${NC}"
-    echo -e "${TEAL}│${NC}      ${TEAL}/${NC}|${TEAL}╲${NC}_${TEAL}╱${NC}|${TEAL}\\${NC}               ${DIM}/ship-day${NC}    Create PR when done             ${TEAL}│${NC}"
-    echo -e "${TEAL}│${NC}     ${TEAL}(_/ \\_)${NC}                                                             ${TEAL}│${NC}"
-    echo -e "${TEAL}│${NC}                                                                            ${TEAL}│${NC}"
-    echo -e "${TEAL}│${NC}  ${BOLD}Command Line${NC}                ${TEAL}${BOLD}Status${NC}                                       ${TEAL}│${NC}"
-    echo -e "${TEAL}│${NC}  ${BOLD}Automated Workflow${NC}          Claude: ${claude_status} ${DIM}(${claude_version})${NC}                  ${TEAL}│${NC}"
+    printf "${CYAN}╭─ ${BOLD}claw${NC}${CYAN} v${VERSION} ───────────────────────────────────────────────────────────╮${NC}\n"
+    printf "${CYAN}│${NC}                                                                          ${CYAN}│${NC}\n"
+    printf "${CYAN}│${NC}      ${CYAN}%s${NC}              ${CYAN}${BOLD}Commands${NC}                                     ${CYAN}│${NC}\n" '/\___/\'
+    printf "${CYAN}│${NC}     ${CYAN}(  o o  )${NC}             /plan-day    Plan from GitHub issues          ${CYAN}│${NC}\n"
+    printf "${CYAN}│${NC}     ${CYAN}(   >   )${NC}             /brainstorm  Multi-perspective analysis       ${CYAN}│${NC}\n"
+    printf "${CYAN}│${NC}      ${CYAN}%s${NC}              /ship-day    Create PR when done              ${CYAN}│${NC}\n" '/|   |\'
+    printf "${CYAN}│${NC}     ${CYAN}(_|   |_)${NC}                                                           ${CYAN}│${NC}\n"
+    printf "${CYAN}│${NC}                                                                          ${CYAN}│${NC}\n"
+    printf "${CYAN}│${NC}  ${BOLD}Command Line${NC}              ${CYAN}${BOLD}Status${NC}                                       ${CYAN}│${NC}\n"
+    printf "${CYAN}│${NC}  ${BOLD}Automated Workflow${NC}        Claude: ${claude_status_color}${claude_status_icon} ready${NC} (${claude_version})            ${CYAN}│${NC}\n"
 
     # Show current repo
     if [[ -n "$current_repo" ]]; then
-        printf "${TEAL}│${NC}                              Current: ${GREEN}%s${NC}%*s${TEAL}│${NC}\n" "$current_repo" $((28 - ${#current_repo})) ""
+        printf "${CYAN}│${NC}                            Current: ${GREEN}%-24s${NC}${CYAN}│${NC}\n" "$current_repo"
     else
-        echo -e "${TEAL}│${NC}                              ${DIM}Not in a git repo${NC}                        ${TEAL}│${NC}"
+        printf "${CYAN}│${NC}                            ${GRAY}Not in a git repo${NC}                        ${CYAN}│${NC}\n"
     fi
 
     # Show tracked repos
     if [[ $tracked_count -gt 0 ]]; then
-        printf "${TEAL}│${NC}                              Tracked: ${TEAL}%d repo(s)${NC}%*s${TEAL}│${NC}\n" "$tracked_count" $((19 - ${#tracked_count})) ""
+        printf "${CYAN}│${NC}                            Tracked: ${CYAN}%-23s${NC}${CYAN}│${NC}\n" "${tracked_count} repo(s)"
     else
-        echo -e "${TEAL}│${NC}                              ${DIM}No repos tracked${NC}                         ${TEAL}│${NC}"
+        printf "${CYAN}│${NC}                            ${GRAY}No repos tracked${NC}                         ${CYAN}│${NC}\n"
     fi
 
-    echo -e "${TEAL}│${NC}                                                                            ${TEAL}│${NC}"
-    echo -e "${TEAL}╰────────────────────────────────────────────────────────────────────────────╯${NC}"
+    printf "${CYAN}│${NC}                                                                          ${CYAN}│${NC}\n"
+    printf "${CYAN}╰──────────────────────────────────────────────────────────────────────────╯${NC}\n"
     echo ""
 }
 
