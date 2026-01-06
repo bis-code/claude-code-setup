@@ -151,6 +151,7 @@ leann_status() {
         command -v pip &>/dev/null && echo "  - pip"
         ! command -v pipx &>/dev/null && ! command -v uv &>/dev/null && ! command -v pip &>/dev/null && echo "  (none found - install pipx, uv, or pip)"
     fi
+    return 0
 }
 
 # Get LEANN agent instructions to inject into CLAUDE.md
