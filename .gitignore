@@ -1,0 +1,18 @@
+# Test dependencies (cloned during setup)
+tests/bats/
+tests/test_helper/bats-support/
+tests/test_helper/bats-assert/
+
+# Temporary files
+/tmp/
+*.tmp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo

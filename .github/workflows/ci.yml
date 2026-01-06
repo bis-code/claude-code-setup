@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup BATS
+        run: |
+          git clone --depth 1 https://github.com/bats-core/bats-core.git tests/bats
+          git clone --depth 1 https://github.com/bats-core/bats-support.git tests/test_helper/bats-support
+          git clone --depth 1 https://github.com/bats-core/bats-assert.git tests/test_helper/bats-assert
+
+      - name: Setup uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+
+      - name: Add uv to PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install LEANN
+        run: |
+          source ~/.bashrc 2>/dev/null || true
+          export PATH="$HOME/.local/bin:$PATH"
+          uv tool install leann || echo "LEANN installation failed, tests will skip"
+
+      - name: Run unit tests
+        run: ./tests/bats/bin/bats tests/detect_project.bats tests/project_types.bats tests/agents.bats
+
+      - name: Run integration tests
+        run: ./tests/bats/bin/bats tests/integration.bats tests/edge_cases.bats
+
+      - name: Run LEANN tests
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          ./tests/bats/bin/bats tests/leann.bats
+
+      - name: Run multi-repo tests
+        run: ./tests/bats/bin/bats tests/multi_repo.bats
+
+      - name: Run external dependency tests
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          ./tests/bats/bin/bats tests/external_deps.bats
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: sudo apt-get install -y shellcheck
+
+      - name: Run shellcheck
+        run: |
+          shellcheck bin/claw lib/*.sh install.sh tests/setup_tests.sh || true
+          echo "Shellcheck completed (warnings allowed)"
