@@ -10,10 +10,33 @@ env:
   FORMULA_NAME: claw
 
 jobs:
-  release:
+  # Job 1: Run tests first
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup BATS
+        run: |
+          git clone --depth 1 https://github.com/bats-core/bats-core.git tests/bats
+          git clone --depth 1 https://github.com/bats-core/bats-support.git tests/test_helper/bats-support
+          git clone --depth 1 https://github.com/bats-core/bats-assert.git tests/test_helper/bats-assert
+
+      - name: Run tests
+        run: ./tests/bats/bin/bats tests/*.bats
+
+  # Job 2: Build tarball and create draft release
+  build:
+    needs: test
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # Needed to create releases
+      contents: write
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+      sha256: ${{ steps.tarball.outputs.sha256 }}
+      tarball: ${{ steps.tarball.outputs.tarball }}
 
     steps:
       - name: Checkout repository
@@ -34,8 +57,6 @@ jobs:
             echo "Error: Version mismatch!"
             echo "Tag version: $TAG_VERSION"
             echo "Script version: $SCRIPT_VERSION"
-            echo ""
-            echo "Please update VERSION in bin/claw to match the tag"
             exit 1
           fi
           echo "Version verified: $TAG_VERSION"
@@ -46,10 +67,7 @@ jobs:
           VERSION=${{ steps.version.outputs.version }}
           TARBALL_NAME="claw-${VERSION}.tar.gz"
 
-          # Create a clean directory for the release
           mkdir -p release-build/claw-${VERSION}
-
-          # Copy necessary files
           cp -r bin release-build/claw-${VERSION}/
           cp -r lib release-build/claw-${VERSION}/
           cp -r templates release-build/claw-${VERSION}/
@@ -57,53 +75,127 @@ jobs:
           cp README.md release-build/claw-${VERSION}/
           cp Makefile release-build/claw-${VERSION}/
 
-          # Create tarball
           cd release-build
           tar -czvf "../${TARBALL_NAME}" "claw-${VERSION}"
           cd ..
 
-          # Calculate SHA256
           SHA256=$(sha256sum "${TARBALL_NAME}" | cut -d' ' -f1)
 
           echo "tarball=${TARBALL_NAME}" >> $GITHUB_OUTPUT
           echo "sha256=${SHA256}" >> $GITHUB_OUTPUT
+          echo "Created ${TARBALL_NAME} with SHA256: ${SHA256}"
 
-          echo "Created ${TARBALL_NAME}"
-          echo "SHA256: ${SHA256}"
-
-      - name: Create GitHub Release
+      - name: Create Draft Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           name: claw v${{ steps.version.outputs.version }}
           files: ${{ steps.tarball.outputs.tarball }}
-          generate_release_notes: true  # Uses GitHub's auto-generated notes
-          draft: false
+          generate_release_notes: true
+          draft: true  # Create as draft first
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Job 3: Test brew install on macOS
+  test-brew:
+    needs: build
+    runs-on: macos-latest
+    steps:
+      - name: Checkout homebrew-tap
+        uses: actions/checkout@v4
+        with:
+          repository: bis-code/homebrew-tap
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: homebrew-tap
+
+      - name: Create test formula
+        run: |
+          VERSION=${{ needs.build.outputs.version }}
+          SHA256=${{ needs.build.outputs.sha256 }}
+
+          cat > homebrew-tap/Formula/claw.rb << EOF
+          class Claw < Formula
+            desc "Claude Automated Workflow - CLI tool for Claude Code configurations"
+            homepage "https://github.com/bis-code/claude-code-setup"
+            url "https://github.com/bis-code/claude-code-setup/releases/download/v${VERSION}/claw-${VERSION}.tar.gz"
+            sha256 "${SHA256}"
+            license "MIT"
+            version "${VERSION}"
+
+            def install
+              bin.install "bin/claw"
+              (lib/"claw").install Dir["lib/*"]
+              (lib/"claw").install "templates"
+
+              inreplace bin/"claw",
+                'LIB_DIR="\${SCRIPT_DIR}/../lib"',
+                "LIB_DIR=\"#{lib}/claw\""
+
+              inreplace bin/"claw",
+                'TEMPLATES_DIR="\${SCRIPT_DIR}/../templates"',
+                "TEMPLATES_DIR=\"#{lib}/claw/templates\""
+            end
+
+            test do
+              system "#{bin}/claw", "version"
+              system "#{bin}/claw", "help"
+            end
+          end
+          EOF
+
+      - name: Test brew install
+        run: |
+          brew tap bis-code/tap ./homebrew-tap
+          brew install --verbose claw
+
+          echo "Testing claw commands..."
+          claw version
+          claw help
+          claw detect
+
+          echo "✅ Brew install test passed!"
+
+  # Job 4: Publish release and update homebrew-tap
+  publish:
+    needs: [build, test-brew]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Publish Release (remove draft)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: releases } = await github.rest.repos.listReleases({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+
+            const draftRelease = releases.find(r => r.tag_name === '${{ needs.build.outputs.tag }}' && r.draft);
+
+            if (draftRelease) {
+              await github.rest.repos.updateRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: draftRelease.id,
+                draft: false
+              });
+              console.log('Release published!');
+            } else {
+              console.log('No draft release found');
+            }
 
       - name: Update Homebrew Tap
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           script: |
-            const version = '${{ steps.version.outputs.version }}';
-            const sha256 = '${{ steps.tarball.outputs.sha256 }}';
-            const formulaRepo = '${{ env.HOMEBREW_TAP_REPO }}';
-            const formulaName = '${{ env.FORMULA_NAME }}';
+            const version = '${{ needs.build.outputs.version }}';
+            const sha256 = '${{ needs.build.outputs.sha256 }}';
 
-            // Formula content
-            const formula = `# frozen_string_literal: true
-
-            # Homebrew formula for claw
-            # Claude Automated Workflow - CLI tool to manage Claude Code configurations
-            #
-            # To install:
-            #   brew tap bis-code/tap
-            #   brew install claw
-            #
-            class Claw < Formula
+            const formula = `class Claw < Formula
               desc "Claude Automated Workflow - CLI tool for Claude Code configurations"
               homepage "https://github.com/bis-code/claude-code-setup"
               url "https://github.com/bis-code/claude-code-setup/releases/download/v${version}/claw-${version}.tar.gz"
@@ -118,7 +210,11 @@ jobs:
 
                 inreplace bin/"claw",
                   'LIB_DIR="\${SCRIPT_DIR}/../lib"',
-                  "LIB_DIR=\\"#{lib}/claw\\""
+                  "LIB_DIR=\\"\#{lib}/claw\\""
+
+                inreplace bin/"claw",
+                  'TEMPLATES_DIR="\${SCRIPT_DIR}/../templates"',
+                  "TEMPLATES_DIR=\\"\#{lib}/claw/templates\\""
               end
 
               def caveats
@@ -136,33 +232,30 @@ jobs:
               end
 
               test do
-                system "#{bin}/claw", "version"
-                system "#{bin}/claw", "help"
+                system "\#{bin}/claw", "version"
+                system "\#{bin}/claw", "help"
               end
-            end
-            `.trim().replace(/^            /gm, '');
+            end`;
 
-            // Get the current formula file (if exists)
-            const [owner, repo] = formulaRepo.split('/');
+            const [owner, repo] = '${{ env.HOMEBREW_TAP_REPO }}'.split('/');
             let fileSha = null;
 
             try {
               const { data } = await github.rest.repos.getContent({
                 owner,
                 repo,
-                path: `Formula/${formulaName}.rb`
+                path: 'Formula/claw.rb'
               });
               fileSha = data.sha;
             } catch (e) {
-              console.log('Formula does not exist yet, will create');
+              console.log('Formula does not exist yet');
             }
 
-            // Create or update the formula
-            const response = await github.rest.repos.createOrUpdateFileContents({
+            await github.rest.repos.createOrUpdateFileContents({
               owner,
               repo,
-              path: `Formula/${formulaName}.rb`,
-              message: `Update ${formulaName} to v${version}`,
+              path: 'Formula/claw.rb',
+              message: `Update claw to v${version}`,
               content: Buffer.from(formula).toString('base64'),
               sha: fileSha,
               committer: {
@@ -171,20 +264,4 @@ jobs:
               }
             });
 
-            console.log(`Updated formula: ${response.data.content.html_url}`);
-
-  # Run tests before release to ensure quality
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup BATS
-        run: |
-          git clone --depth 1 https://github.com/bats-core/bats-core.git tests/bats
-          git clone --depth 1 https://github.com/bats-core/bats-support.git tests/test_helper/bats-support
-          git clone --depth 1 https://github.com/bats-core/bats-assert.git tests/test_helper/bats-assert
-
-      - name: Run tests
-        run: ./tests/bats/bin/bats tests/*.bats
+            console.log('Homebrew tap updated!');
