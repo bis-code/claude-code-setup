@@ -8,6 +8,17 @@ load 'test_helper.bash'
 setup() {
     TMP_DIR=$(mktemp -d -t claw-test-XXXXXX)
     export TMP_DIR
+    export CLAW_HOME="$TMP_DIR/claw-home"
+    export CLAUDE_HOME="$TMP_DIR/claude-home"
+    mkdir -p "$CLAW_HOME" "$CLAUDE_HOME"
+    # Skip leann setup in tests
+    touch "$CLAW_HOME/.leann-mcp-configured"
+    # Mock claude command
+    mkdir -p "$TMP_DIR/bin"
+    echo '#!/bin/bash' > "$TMP_DIR/bin/claude"
+    echo 'echo "mock claude"' >> "$TMP_DIR/bin/claude"
+    chmod +x "$TMP_DIR/bin/claude"
+    export PATH="$TMP_DIR/bin:$PATH"
 }
 
 teardown() {
@@ -81,38 +92,8 @@ EOF
     assert [ -d "$TMP_DIR/.claw" ]
 }
 
-# CLI Integration Tests
-@test "claw multi-repo detect: runs detection" {
-    local parent="$TMP_DIR/projects"
-    mkdir -p "$parent/game" "$parent/frontend"
-    cd "$parent/game"
-
-    run "$PROJECT_ROOT/bin/claw" multi-repo detect
-    assert_success
-}
-
-@test "claw multi-repo config: creates config" {
-    mkdir -p "$TMP_DIR/project"
-    cd "$TMP_DIR/project"
-
-    run "$PROJECT_ROOT/bin/claw" multi-repo config
-    assert_success
-    assert [ -d ".claw" ]
-}
-
-@test "claw multi-repo issues: attempts to fetch issues" {
-    mkdir -p "$TMP_DIR/project"
-    cd "$TMP_DIR/project"
-
-    run "$PROJECT_ROOT/bin/claw" multi-repo issues
-    # May fail if not in a git repo with remote, but shouldn't crash
-    [[ "$status" -eq 0 ]] || [[ "$status" -eq 1 ]]
-}
-
-@test "claw multi-repo: unknown subcommand fails" {
-    run "$PROJECT_ROOT/bin/claw" multi-repo unknown-cmd
-    assert_failure
-}
+# Note: CLI tests for `claw multi-repo` removed - command no longer exists
+# Multi-repo functionality is now integrated into /plan-day command
 
 # Pattern Detection Tests
 @test "detect_multi_repo: finds frontend sibling" {

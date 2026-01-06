@@ -11,6 +11,14 @@ setup() {
     export CLAW_HOME="$TMP_DIR/claw-home"
     export CLAUDE_HOME="$TMP_DIR/claude-home"
     mkdir -p "$CLAW_HOME" "$CLAUDE_HOME"
+    # Skip leann setup in tests
+    touch "$CLAW_HOME/.leann-mcp-configured"
+    # Mock claude command
+    mkdir -p "$TMP_DIR/bin"
+    echo '#!/bin/bash' > "$TMP_DIR/bin/claude"
+    echo 'echo "claude mock: $*"' >> "$TMP_DIR/bin/claude"
+    chmod +x "$TMP_DIR/bin/claude"
+    export PATH="$TMP_DIR/bin:$PATH"
 }
 
 teardown() {
