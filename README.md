@@ -26,8 +26,8 @@ brew install claw
 
 **Manual:**
 ```bash
-git clone https://github.com/bis-code/claude-code-setup.git
-cd claude-code-setup
+git clone https://github.com/bis-code/claw.git
+cd claw
 ./install.sh --prefix ~/.local
 ```
 

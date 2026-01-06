@@ -84,14 +84,14 @@ skip_if_no_uv() {
     skip_if_no_gh_auth
 
     # Try to list issues (even if empty, should succeed)
-    run gh issue list --repo bis-code/claude-code-setup --limit 1 --state all
+    run gh issue list --repo bis-code/claw --limit 1 --state all
     assert_success
 }
 
 @test "gh CLI: can fetch PRs from repo" {
     skip_if_no_gh_auth
 
-    run gh pr list --repo bis-code/claude-code-setup --limit 1 --state all
+    run gh pr list --repo bis-code/claw --limit 1 --state all
     assert_success
 }
 
@@ -113,8 +113,8 @@ skip_if_no_uv() {
     cat > "$TMP_DIR/.claw/multi-repo.json" << 'EOF'
 {
     "detected": true,
-    "repos": ["bis-code/claude-code-setup"],
-    "primary": "bis-code/claude-code-setup"
+    "repos": ["bis-code/claw"],
+    "primary": "bis-code/claw"
 }
 EOF
 

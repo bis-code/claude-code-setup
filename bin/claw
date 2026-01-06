@@ -80,7 +80,7 @@ cmd_version() {
     echo -e "${BOLD}claw${NC} v${VERSION}"
     echo "Claude Automated Workflow"
     echo ""
-    echo "https://github.com/bis-code/claude-code-setup"
+    echo "https://github.com/bis-code/claw"
 }
 
 cmd_detect() {
