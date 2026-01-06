@@ -38,10 +38,18 @@ This ensures efficient searching throughout the work session.
 
 ### Step 1: Gather Candidates
 
-**Default**: Fetch GitHub issues labeled `claude-ready`
+**Default**: Fetch GitHub issues labeled `claude-ready` from all tracked repos
 ```bash
+# If claw is available (multi-repo support)
+claw issues --label claude-ready
+
+# Fallback to single repo
 gh issue list --label "claude-ready" --state open --json number,title,labels,body
 ```
+
+**Multi-repo**: If you have repos tracked with `claw repos add`, issues are fetched from:
+1. Current directory's repo (from git remote)
+2. All tracked repos
 
 **Fallback**: If no issues or `--no-issues` flag:
 > "What would you like to accomplish in the next X hours?"
