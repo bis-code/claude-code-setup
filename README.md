@@ -1,16 +1,20 @@
 # claw - Claude Automated Workflow
 
-A CLI tool that supercharges Claude Code with intelligent project detection, AI agent brainstorming, and semantic code search.
+![Version](https://img.shields.io/badge/version-0.4.3-blue)
+![Tests](https://img.shields.io/badge/tests-165%20passing-green)
+![License](https://img.shields.io/badge/license-MIT-brightgreen)
 
-## Project Status (v0.4.3)
+> **Supercharge Claude Code with project detection, agent brainstorming, and semantic search**
 
-**What's Working:**
-- Intelligent project type detection (17+ project types)
-- Agent roster with 17 specialized AI personas for brainstorming
+Detects your project type, recommends specialized AI agents for brainstorming, and adds semantic code search. Install once, use in any project.
+
+## What's Working
+
+- 17+ project types auto-detected (Unity, Godot, SaaS, Web3, ML, API, mobile, desktop, CLI, library)
+- 17 specialized agents for multi-perspective brainstorming
 - LEANN semantic search integration
-- Multi-repo project support
-- Auto-generated slash commands (`/brainstorm`, `/plan-day`, `/search`)
-- 165 passing tests
+- Multi-repo project detection
+- Slash commands: `/brainstorm`, `/plan-day`, `/search`
 
 ## Installation
 
@@ -31,122 +35,68 @@ cd claude-code-setup
 
 ## Usage Levels
 
-claw is designed to grow with your needs. Start simple, add capabilities as you need them.
+Start simple, add capabilities as needed.
 
 ### Level 1: Basic Setup
-
-Just want Claude Code configured? One command:
 
 ```bash
 cd your-project
 claw init
 ```
 
-**What you get:**
-- `.claude/` directory with slash commands
-- `CLAUDE.md` project instructions file
-- Auto-detected project type and preset
-
-**Use in Claude Code:**
-```
-/brainstorm    # Get multi-perspective feedback on ideas
-```
+Creates `.claude/` with slash commands and `CLAUDE.md`. Use `/brainstorm` in Claude Code.
 
 ---
 
 ### Level 2: Agent Brainstorming
 
-Want AI personas to debate your decisions? Check what agents are recommended:
-
 ```bash
-claw detect                    # See your project type
+claw detect                    # See project type
 claw agents list               # See recommended agents
-claw agents spawn senior-dev   # Preview an agent's prompt
+claw agents spawn senior-dev   # Preview agent prompt
 ```
 
-**Example output:**
-```
-Project Type: saas
-Recommended Agents: senior-dev product cto qa ux security
-```
-
-**Use in Claude Code:**
-```
-/brainstorm Should we use Redis or PostgreSQL for sessions?
-```
-
-The agents will debate from their perspectives (Security will worry about expiry, DevOps about ops overhead, etc.)
+Use `/brainstorm Should we use Redis or PostgreSQL?` - agents debate from their perspectives.
 
 ---
 
 ### Level 3: Semantic Search
 
-Want to search your codebase by meaning, not just keywords?
-
 ```bash
-# Check if LEANN is installed
-claw leann status
-
-# If not installed:
-pip install leann   # or: uvx leann
-
-# Build the search index
-claw leann build
+claw leann status              # Check if LEANN installed
+pip install leann              # Install if needed
+claw leann build               # Build search index
 ```
 
-**Use in Claude Code:**
-```
-/search "where is user authentication handled"
-/search "database connection pooling"
-```
+Use `/search "authentication flow"` in Claude Code.
 
 ---
 
 ### Level 4: Multi-Repo Projects
 
-Working across multiple related repositories?
-
 ```bash
-# From any repo in the group
 claw multi-repo detect
 ```
 
-**How detection works (in priority order):**
+Finds related repos by:
+1. **Prefix** - `myapp-frontend` finds `myapp-backend`
+2. **Git siblings** - Any `.git` folder in same parent
+3. **Patterns** - Folders named `frontend`, `backend`, `api`, `contracts`
 
-1. **Prefix matching** - If you're in `myapp-frontend`, finds `myapp-backend`, `myapp-api`
-2. **Git siblings** - Finds any sibling folders with `.git` directories
-3. **Pattern matching** - Finds folders named `frontend`, `backend`, `api`, `contracts`, etc.
-
-**Example output:**
-```json
-{
-  "detected": true,
-  "prefix": "myapp",
-  "siblings": [
-    {"name": "myapp-backend", "type": "api"},
-    {"name": "myapp-contracts", "type": "web3"}
-  ]
-}
-```
-
-**Coordinate across repos:**
 ```bash
-claw multi-repo config     # Create shared config
-claw multi-repo issues     # Fetch issues from all repos
+claw multi-repo config         # Create shared config
+claw multi-repo issues         # Fetch issues from all repos
 ```
 
 ---
 
-### Level 5: Daily Planning (GitHub integration)
-
-Plan your day based on GitHub issues labeled for Claude:
+### Level 5: Daily Planning
 
 ```bash
-# Requires: gh auth login
-/plan-day
+/plan-day                      # Requires: gh auth login
 ```
 
-This fetches issues tagged `claude-ready` from your repo(s) and helps prioritize.
+Fetches issues tagged `claude-ready` and helps prioritize.
 
 ---
 
