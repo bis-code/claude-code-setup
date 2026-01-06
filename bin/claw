@@ -17,7 +17,7 @@ VERSION="0.6.0"
 # ============================================================================
 
 CLAW_HOME="${CLAW_HOME:-$HOME/.claw}"
-CLAUDE_HOME="$HOME/.claude"
+CLAUDE_HOME="${CLAUDE_HOME:-$HOME/.claude}"
 
 # Source modules
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
