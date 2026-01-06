@@ -141,3 +141,85 @@ EOF
     assert_success
     assert_output --partial "contracts"
 }
+
+# Cross-Repo Dependency Detection Tests
+@test "detect_cross_repo_dependencies: detects npm file: dependencies" {
+    # Setup multi-repo structure
+    mkdir -p "$TMP_DIR/myapp-frontend"
+    mkdir -p "$TMP_DIR/myapp-shared"
+    git -C "$TMP_DIR/myapp-frontend" init -q
+    git -C "$TMP_DIR/myapp-shared" init -q
+
+    # Add package.json with file: dependency
+    cat > "$TMP_DIR/myapp-frontend/package.json" << 'EOF'
+{
+  "name": "myapp-frontend",
+  "dependencies": {
+    "shared": "file:../myapp-shared"
+  }
+}
+EOF
+
+    cd "$TMP_DIR/myapp-frontend"
+    run detect_cross_repo_dependencies "."
+    assert_success
+    assert_output --partial "npm-local"
+}
+
+@test "detect_cross_repo_dependencies: detects git submodules" {
+    mkdir -p "$TMP_DIR/main-repo"
+    git -C "$TMP_DIR/main-repo" init -q
+
+    # Create .gitmodules file
+    cat > "$TMP_DIR/main-repo/.gitmodules" << 'EOF'
+[submodule "libs/shared"]
+    path = libs/shared
+    url = git@github.com:example/shared.git
+EOF
+
+    run detect_cross_repo_dependencies "$TMP_DIR/main-repo"
+    assert_success
+    assert_output --partial "git-submodule"
+}
+
+# Prefix Detection Tests
+@test "detect_multi_repo: detects prefix pattern myapp-*" {
+    local parent="$TMP_DIR/projects"
+    mkdir -p "$parent/myapp-frontend" "$parent/myapp-backend" "$parent/myapp-contracts"
+    git -C "$parent/myapp-frontend" init -q
+    git -C "$parent/myapp-backend" init -q
+    git -C "$parent/myapp-contracts" init -q
+
+    run detect_multi_repo "$parent/myapp-frontend"
+    assert_success
+    assert_output --partial '"prefix": "myapp"'
+    assert_output --partial "myapp-backend"
+}
+
+@test "detect_multi_repo: git siblings take priority" {
+    local parent="$TMP_DIR/projects"
+    mkdir -p "$parent/myproject" "$parent/other-git-repo" "$parent/non-git-folder"
+    git -C "$parent/myproject" init -q
+    git -C "$parent/other-git-repo" init -q
+    # non-git-folder has no .git
+
+    run detect_multi_repo "$parent/myproject"
+    assert_success
+    assert_output --partial "other-git-repo"
+}
+
+@test "detect_multi_repo: includes project type in output" {
+    local parent="$TMP_DIR/projects"
+    mkdir -p "$parent/myapp-frontend" "$parent/myapp-backend"
+    git -C "$parent/myapp-frontend" init -q
+    git -C "$parent/myapp-backend" init -q
+
+    # Make backend look like an API project
+    cat > "$parent/myapp-backend/package.json" << 'EOF'
+{"dependencies": {"express": "^4.0.0"}}
+EOF
+
+    run detect_multi_repo "$parent/myapp-frontend"
+    assert_success
+    assert_output --partial '"type":'
+}

@@ -190,3 +190,52 @@ teardown() {
     assert_failure
     assert_output --partial "Usage:"
 }
+
+# Install LEANN Tests (mocked)
+@test "install_leann: fails when no package manager available" {
+    # Override all package manager checks to return false
+    command() {
+        case "$2" in
+            pipx|uv|pip) return 1 ;;
+            *) builtin command "$@" ;;
+        esac
+    }
+    export -f command
+
+    run install_leann
+    assert_failure
+    assert_output --partial "No package manager found"
+}
+
+# Build Index Tests
+@test "build_index: uses directory name as default index" {
+    cd "$TMP_DIR"
+    mkdir -p "test-project"
+    cd "test-project"
+
+    # Mock is_leann_installed to return true
+    is_leann_installed() { return 0; }
+    export -f is_leann_installed
+
+    # Mock leann build to just echo
+    leann() { echo "leann $*"; }
+    export -f leann
+
+    run build_index
+    assert_success
+    assert_output --partial "test-project"
+}
+
+@test "build_index: accepts custom index name" {
+    cd "$TMP_DIR"
+
+    is_leann_installed() { return 0; }
+    export -f is_leann_installed
+
+    leann() { echo "leann $*"; }
+    export -f leann
+
+    run build_index "custom-index" "."
+    assert_success
+    assert_output --partial "custom-index"
+}
