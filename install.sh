@@ -40,6 +40,9 @@ if $USE_SUDO; then
     sudo cp -r "$SCRIPT_DIR/templates" "$LIB_DIR/"
     sudo cp "$SCRIPT_DIR/bin/claw" "$BIN_DIR/"
     sudo chmod +x "$BIN_DIR/claw"
+    # Update paths in installed script
+    sudo sed -i '' "s|LIB_DIR=\"\${SCRIPT_DIR}/../lib\"|LIB_DIR=\"${LIB_DIR}\"|" "$BIN_DIR/claw"
+    sudo sed -i '' "s|TEMPLATES_DIR=\"\${SCRIPT_DIR}/../templates\"|TEMPLATES_DIR=\"${LIB_DIR}/templates\"|" "$BIN_DIR/claw"
 else
     mkdir -p "$BIN_DIR"
     mkdir -p "$LIB_DIR"
@@ -47,6 +50,9 @@ else
     cp -r "$SCRIPT_DIR/templates" "$LIB_DIR/"
     cp "$SCRIPT_DIR/bin/claw" "$BIN_DIR/"
     chmod +x "$BIN_DIR/claw"
+    # Update paths in installed script
+    sed -i '' "s|LIB_DIR=\"\${SCRIPT_DIR}/../lib\"|LIB_DIR=\"${LIB_DIR}\"|" "$BIN_DIR/claw"
+    sed -i '' "s|TEMPLATES_DIR=\"\${SCRIPT_DIR}/../templates\"|TEMPLATES_DIR=\"${LIB_DIR}/templates\"|" "$BIN_DIR/claw"
 fi
 
 echo "Installed to $BIN_DIR/claw"
