@@ -270,28 +270,82 @@ detect_multi_repo() {
     current_name=$(basename "$(realpath "$root" 2>/dev/null || echo "$root")")
     local siblings=()
 
-    # Common multi-repo patterns
-    local patterns=("game" "frontend" "backend" "api" "contracts" "web3-backend" "dashboard" "mobile" "desktop" "docs" "infra" "shared" "common" "packages")
+    # Strategy 1: Find all sibling directories that are git repos
+    local git_siblings=()
+    for sibling_dir in "$parent_dir"/*/; do
+        local sib_name
+        sib_name=$(basename "$sibling_dir")
 
-    for pattern in "${patterns[@]}"; do
-        if [[ -d "$parent_dir/$pattern" ]] && [[ "$pattern" != "$current_name" ]]; then
-            siblings+=("$pattern")
+        # Skip current directory
+        [[ "$sib_name" == "$current_name" ]] && continue
+
+        # Check if it's a git repo
+        if [[ -d "$sibling_dir/.git" ]]; then
+            git_siblings+=("$sib_name")
         fi
     done
 
-    if [[ ${#siblings[@]} -gt 0 ]]; then
+    # Strategy 2: Detect naming patterns (e.g., myapp-frontend, myapp-backend)
+    # Extract common prefix from current repo name
+    local common_prefix=""
+    if [[ "$current_name" =~ ^(.+)[-_](frontend|backend|api|web|app|mobile|desktop|contracts|server|client|core|shared|common|lib|docs|infra)$ ]]; then
+        common_prefix="${BASH_REMATCH[1]}"
+    fi
+
+    # If we found a common prefix, look for siblings with same prefix
+    local related_siblings=()
+    if [[ -n "$common_prefix" ]]; then
+        for sibling_dir in "$parent_dir"/*/; do
+            local sib_name
+            sib_name=$(basename "$sibling_dir")
+            [[ "$sib_name" == "$current_name" ]] && continue
+            if [[ "$sib_name" == "$common_prefix"* ]] || [[ "$sib_name" == *"$common_prefix"* ]]; then
+                related_siblings+=("$sib_name")
+            fi
+        done
+    fi
+
+    # Strategy 3: Fallback - check for common multi-repo folder patterns
+    local pattern_siblings=()
+    local patterns=("frontend" "backend" "api" "contracts" "web" "mobile" "desktop" "docs" "infra" "shared" "common" "server" "client" "app" "dashboard" "admin")
+    for pattern in "${patterns[@]}"; do
+        if [[ -d "$parent_dir/$pattern" ]] && [[ "$pattern" != "$current_name" ]]; then
+            pattern_siblings+=("$pattern")
+        fi
+    done
+
+    # Prioritize: related by prefix > git repos > pattern matches
+    local final_siblings=()
+    if [[ ${#related_siblings[@]} -gt 0 ]]; then
+        final_siblings=("${related_siblings[@]}")
+    elif [[ ${#git_siblings[@]} -gt 0 ]]; then
+        final_siblings=("${git_siblings[@]}")
+    else
+        final_siblings=("${pattern_siblings[@]}")
+    fi
+
+    if [[ ${#final_siblings[@]} -gt 0 ]]; then
         echo "{"
         echo '  "detected": true,'
         echo "  \"parent\": \"$parent_dir\","
         echo "  \"current\": \"$current_name\","
+        [[ -n "$common_prefix" ]] && echo "  \"prefix\": \"$common_prefix\","
         echo '  "siblings": ['
         local first=true
-        for sib in "${siblings[@]}"; do
+        for sib in "${final_siblings[@]}"; do
             if ! $first; then echo ","; fi
             first=false
+            local sib_type
+            sib_type=$(detect_project_type "$parent_dir/$sib")
+            local sib_remote=""
+            if [[ -d "$parent_dir/$sib/.git" ]]; then
+                sib_remote=$(git -C "$parent_dir/$sib" remote get-url origin 2>/dev/null || echo "")
+            fi
             echo "    {"
             echo "      \"name\": \"$sib\","
-            echo "      \"path\": \"$parent_dir/$sib\""
+            echo "      \"path\": \"$parent_dir/$sib\","
+            echo "      \"type\": \"$sib_type\""
+            [[ -n "$sib_remote" ]] && echo "      ,\"remote\": \"$sib_remote\""
             echo -n "    }"
         done
         echo ""
@@ -342,7 +396,73 @@ fetch_multi_repo_issues() {
 # Detect cross-repo dependencies
 detect_cross_repo_dependencies() {
     local root="${1:-.}"
-    echo "[]"
+    local deps=()
+
+    # Get multi-repo info
+    local multi_json
+    multi_json=$(detect_multi_repo "$root")
+
+    if ! echo "$multi_json" | grep -q '"detected": true'; then
+        echo "[]"
+        return 0
+    fi
+
+    local parent_dir
+    parent_dir=$(dirname "$(realpath "$root" 2>/dev/null || echo "$root")")
+    local current_name
+    current_name=$(basename "$(realpath "$root" 2>/dev/null || echo "$root")")
+
+    # Check package.json for local dependencies
+    if [[ -f "$root/package.json" ]]; then
+        # Look for file: or link: dependencies pointing to siblings
+        local file_deps
+        file_deps=$(grep -oE '"(file|link):\.\./[^"]+' "$root/package.json" 2>/dev/null | sed 's/"//g' || echo "")
+        for dep in $file_deps; do
+            local dep_path
+            dep_path=$(echo "$dep" | sed 's/^(file|link)://')
+            local dep_name
+            dep_name=$(basename "$dep_path")
+            deps+=("{\"from\": \"$current_name\", \"to\": \"$dep_name\", \"type\": \"npm-local\"}")
+        done
+
+        # Look for workspace references
+        local workspace_deps
+        workspace_deps=$(grep -oE '"workspace:\*"' "$root/package.json" 2>/dev/null || echo "")
+        # This indicates pnpm workspace deps - would need to parse further
+    fi
+
+    # Check for git submodules
+    if [[ -f "$root/.gitmodules" ]]; then
+        local submodules
+        submodules=$(grep 'path = ' "$root/.gitmodules" | sed 's/.*path = //' || echo "")
+        for submod in $submodules; do
+            deps+=("{\"from\": \"$current_name\", \"to\": \"$submod\", \"type\": \"git-submodule\"}")
+        done
+    fi
+
+    # Check for imports/references to sibling paths in code
+    # Look for common patterns like "../sibling-repo" in imports
+    local sibling_imports
+    sibling_imports=$(grep -rhoE "from ['\"]\\.\\./(\\w+)" "$root/src" "$root/lib" "$root/app" 2>/dev/null | sort -u | sed "s/from ['\"]\\.\\.\\///" || echo "")
+    for imp in $sibling_imports; do
+        if [[ -d "$parent_dir/$imp" ]]; then
+            deps+=("{\"from\": \"$current_name\", \"to\": \"$imp\", \"type\": \"import\"}")
+        fi
+    done
+
+    # Output as JSON array
+    if [[ ${#deps[@]} -eq 0 ]]; then
+        echo "[]"
+    else
+        echo "["
+        local first=true
+        for dep in "${deps[@]}"; do
+            if ! $first; then echo ","; fi
+            first=false
+            echo "    $dep"
+        done
+        echo "  ]"
+    fi
 }
 
 # Create multi-repo config
