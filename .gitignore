@@ -3,6 +3,9 @@ tests/bats/
 tests/test_helper/bats-support/
 tests/test_helper/bats-assert/
 
+# LEANN indexes (generated per-project)
+.leann/
+
 # Temporary files
 /tmp/
 *.tmp
