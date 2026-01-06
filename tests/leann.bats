@@ -129,3 +129,64 @@ teardown() {
     assert_success
     assert_output --partial "LEANN Commands"
 }
+
+# Index Name Generation Tests
+@test "get_index_name: generates name from directory" {
+    cd "$TMP_DIR"
+    mkdir -p "my-project"
+    cd "my-project"
+    run get_index_name
+    assert_success
+    assert_output "my-project"
+}
+
+@test "get_index_name: sanitizes uppercase" {
+    cd "$TMP_DIR"
+    mkdir -p "MyProject"
+    cd "MyProject"
+    run get_index_name
+    assert_success
+    assert_output "myproject"
+}
+
+@test "get_index_name: sanitizes special characters" {
+    cd "$TMP_DIR"
+    mkdir -p "my_project.test"
+    cd "my_project.test"
+    run get_index_name
+    assert_success
+    # Special chars replaced with dashes
+    assert_output "my-project-test"
+}
+
+# Index Exists Tests (mocked - can't test real leann without it installed)
+@test "index_exists: returns false when leann not installed" {
+    # Temporarily override is_leann_installed
+    is_leann_installed() { return 1; }
+    export -f is_leann_installed
+
+    run index_exists "test-index"
+    assert_failure
+}
+
+# Search with fallback Tests
+@test "search_index: falls back to grep when leann not installed" {
+    # Create test files
+    mkdir -p "$TMP_DIR/src"
+    echo "authentication handler code" > "$TMP_DIR/src/auth.js"
+
+    # Override is_leann_installed to return false
+    is_leann_installed() { return 1; }
+    export -f is_leann_installed
+
+    cd "$TMP_DIR"
+    run search_index "authentication"
+    assert_success
+    assert_output --partial "auth.js"
+}
+
+@test "search_index: shows usage when no query" {
+    run search_index ""
+    assert_failure
+    assert_output --partial "Usage:"
+}
