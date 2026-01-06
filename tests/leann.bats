@@ -1,5 +1,7 @@
 #!/usr/bin/env bats
-# Tests for LEANN integration
+# Tests for LEANN library functions
+# Note: CLI tests for `claw leann` removed - simplified claw doesn't have leann subcommand
+# The library functions are still available via lib/leann-setup.sh
 
 load 'test_helper/bats-support/load'
 load 'test_helper/bats-assert/load'
@@ -111,25 +113,6 @@ teardown() {
     assert_success
 }
 
-# CLI Integration Tests
-@test "claw leann: shows status by default" {
-    run "$PROJECT_ROOT/bin/claw" leann
-    assert_success
-    assert_output --partial "LEANN Status"
-}
-
-@test "claw leann status: shows detailed status" {
-    run "$PROJECT_ROOT/bin/claw" leann status
-    assert_success
-    assert_output --partial "LEANN Status"
-}
-
-@test "claw leann help: shows help" {
-    run "$PROJECT_ROOT/bin/claw" leann help
-    assert_success
-    assert_output --partial "LEANN Commands"
-}
-
 # Index Name Generation Tests
 @test "get_index_name: generates name from directory" {
     cd "$TMP_DIR"
@@ -239,3 +222,6 @@ teardown() {
     assert_success
     assert_output --partial "custom-index"
 }
+
+# Note: CLI integration tests for `claw leann` removed
+# The simplified claw is a drop-in replacement for claude with multi-repo support
