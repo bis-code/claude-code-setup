@@ -215,6 +215,7 @@ handle_templates_command() {
 
             local repo=""
             local install_to_project=false
+            local project_name=""
             local templates=()
 
             # Parse arguments
@@ -223,6 +224,21 @@ handle_templates_command() {
                     --project|-p)
                         install_to_project=true
                         shift
+                        # Check if next arg is a project name (not a template or flag)
+                        if [[ $# -gt 0 ]] && [[ "$1" != -* ]] && [[ "$1" != *"/"* ]]; then
+                            # Check if it's a known template
+                            local is_template=false
+                            for entry in "${AVAILABLE_TEMPLATES[@]}"; do
+                                if [[ "${entry%%:*}" == "$1" ]]; then
+                                    is_template=true
+                                    break
+                                fi
+                            done
+                            if [[ "$is_template" == "false" ]]; then
+                                project_name="$1"
+                                shift
+                            fi
+                        fi
                         ;;
                     -*)
                         echo "Unknown option: $1"
@@ -248,10 +264,17 @@ handle_templates_command() {
 
             # Install to all project repos
             if [[ "$install_to_project" == "true" ]]; then
-                local project_name
-                project_name=$(get_current_project 2>/dev/null || echo "")
+                # Use provided project name or detect from current directory
                 if [[ -z "$project_name" ]]; then
-                    echo "Error: Not in a project. Use --project from within a project repo."
+                    project_name=$(get_current_project 2>/dev/null || echo "")
+                fi
+                if [[ -z "$project_name" ]]; then
+                    echo "Error: No project specified and not in a project directory."
+                    echo "Usage: claw templates install --project <project-name> [templates...]"
+                    return 1
+                fi
+                if ! project_exists "$project_name"; then
+                    echo "Error: Project '$project_name' not found"
                     return 1
                 fi
 
@@ -313,11 +336,12 @@ Examples:
   claw templates list
   claw templates install myorg/myrepo
   claw templates install myorg/myrepo bug-report claude-ready
-  claw templates install                    # Current repo, interactive
-  claw templates install --project          # All project repos, interactive
-  claw templates install -p bug-report      # All project repos, specific template
+  claw templates install                              # Current repo, interactive
+  claw templates install --project                    # All repos in current project
+  claw templates install --project my-project         # All repos in named project
+  claw templates install -p my-project bug-report     # Named project, specific templates
 
-Note: --project only works with repos that have GitHub remotes configured.
+Note: --project only installs to repos that have GitHub remotes configured.
 The claude-ready template creates issues that appear in /plan-day.
 EOF
             ;;
