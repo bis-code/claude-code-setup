@@ -9,7 +9,10 @@
       "include-v-in-tag": true,
       "extra-files": [
         "install.sh",
-        "bin/claw"
+        {
+          "type": "generic",
+          "path": "bin/claw"
+        }
       ]
     }
   },
