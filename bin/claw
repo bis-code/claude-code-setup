@@ -9,7 +9,7 @@
 set -euo pipefail
 
 # x-release-please-start-version
-VERSION="1.3.6"
+VERSION="1.3.7"
 # x-release-please-end
 
 # ============================================================================
@@ -22,7 +22,6 @@ CLAUDE_HOME="${CLAUDE_HOME:-$HOME/.claude}"
 # Source modules
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LIB_DIR="${SCRIPT_DIR}/../lib"
-source "${LIB_DIR}/repos.sh"
 source "${LIB_DIR}/leann-mcp.sh"
 source "${LIB_DIR}/issue-templates.sh"
 source "${LIB_DIR}/projects.sh"
@@ -155,12 +154,6 @@ show_startup_banner() {
         fi
     fi
 
-    # Legacy tracked repos
-    local tracked_count=0
-    if [[ -f "$CLAW_HOME/repos.json" ]]; then
-        tracked_count=$(jq '.repos | length' "$CLAW_HOME/repos.json" 2>/dev/null || echo 0)
-    fi
-
     # Box width: 78 chars total (76 inside + 2 for borders)
     local W=76
 
@@ -200,92 +193,9 @@ show_startup_banner() {
         print_line "                        ${GRAY}Not in a git repo${NC}"
     fi
 
-    # Show legacy tracked repos (if any and no project)
-    if [[ -z "$current_project" ]] && [[ $tracked_count -gt 0 ]]; then
-        print_line "                        Tracked: ${CYAN}${tracked_count} repo(s)${NC}"
-    fi
-
     print_line ""
     printf "${CYAN}╰"; printf '─%.0s' {1..76}; printf "╯${NC}\n"
     echo ""
-}
-
-# ============================================================================
-# Repos Command Handler
-# ============================================================================
-
-handle_repos_command() {
-    local subcommand="${1:-}"
-    shift 2>/dev/null || true
-
-    case "$subcommand" in
-        add)
-            if [[ -z "${1:-}" ]]; then
-                echo "Usage: claw repos add <owner/repo>"
-                exit 1
-            fi
-            repos_add "$1"
-
-            # Offer to configure issue templates (only in interactive mode)
-            if [[ -t 0 ]]; then
-                echo ""
-                read -p "Configure GitHub issue templates for this repo? [y/N] " -n 1 -r
-                echo
-                if [[ $REPLY =~ ^[Yy]$ ]]; then
-                    handle_templates_command install "$1"
-                fi
-            fi
-            ;;
-        remove|rm)
-            if [[ -z "${1:-}" ]]; then
-                echo "Usage: claw repos remove <owner/repo>"
-                exit 1
-            fi
-            repos_remove "$1"
-            ;;
-        list|ls)
-            repos_list
-            ;;
-        clear)
-            if [[ -t 0 ]]; then
-                read -p "Clear all tracked repos? [y/N] " -n 1 -r
-                echo
-                if [[ $REPLY =~ ^[Yy]$ ]]; then
-                    repos_clear
-                fi
-            else
-                # Non-interactive mode: require explicit --yes flag
-                echo "Error: clear requires interactive confirmation or use 'claw repos clear --yes'"
-                exit 1
-            fi
-            ;;
-        ""|--help|-h)
-            cat << 'EOF'
-claw repos - Track multiple repositories
-
-Usage:
-  claw repos add <owner/repo>     Add a repo to track
-  claw repos remove <owner/repo>  Remove a repo from tracking
-  claw repos list                 List all tracked repos
-  claw repos clear                Clear all tracked repos
-
-When running /plan-day, /auto-pilot, or /ship-day, claw aggregates across:
-  1. Current directory's repo (from git remote)
-  2. All tracked repos
-
-Example:
-  claw repos add myorg/backend
-  claw repos add myorg/frontend
-  claw repos list
-  # Now /plan-day shows issues from both repos
-EOF
-            ;;
-        *)
-            echo "Unknown repos command: $subcommand"
-            echo "Run 'claw repos --help' for usage"
-            exit 1
-            ;;
-    esac
 }
 
 # ============================================================================
@@ -353,16 +263,11 @@ GitHub issue templates:
   claw templates install <repo> Install templates to a repo
   claw templates --help         More info
 
-Legacy multi-repo tracking:
-  claw repos add <owner/repo>   Add a repo to track (by GitHub name)
-  claw repos list               List tracked repos
-  claw repos --help             More info
-
 Claw adds:
   - Project-based multi-repo management (local folders)
   - Semantic code search via leann MCP (auto-installed on first run)
   - Global commands: /plan-day, /ship-day, /brainstorm, etc.
-  - Multi-repo: aggregate issues across project repos
+  - Aggregate issues across project repos
   - Session ID shown on exit for easy resume
   - Available in any project without setup
 
@@ -386,12 +291,6 @@ EOF
             reinstall_leann_mcp
             exit $?
             ;;
-        repos)
-            # Legacy multi-repo management
-            shift
-            handle_repos_command "$@"
-            exit $?
-            ;;
         project)
             # Project-based multi-repo management
             shift
@@ -399,15 +298,15 @@ EOF
             exit $?
             ;;
         issues)
-            # Fetch issues from all repos (project-aware)
+            # Fetch issues from all repos in current project
             shift
-            # Try project-aware fetch first, fall back to legacy
             local current_project
             current_project=$(get_current_project 2>/dev/null || echo "")
             if [[ -n "$current_project" ]]; then
                 handle_project_command issues "$@"
             else
-                show_issues_summary "$@"
+                echo "Not in a project. Create one with: claw project create <name>"
+                echo "Or run from within a project directory."
             fi
             exit $?
             ;;

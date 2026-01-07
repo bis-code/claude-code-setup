@@ -151,37 +151,6 @@ test_main_commands() {
     run_test "--update flag" "$CLAW_BIN --update"
 }
 
-test_repos_commands() {
-    echo ""
-    echo "${CYAN}=== Repos Commands ===${NC}"
-
-    # Help
-    run_test_output "repos --help" "$CLAW_BIN repos --help" "Track multiple repositories"
-    run_test_output "repos -h" "$CLAW_BIN repos -h" "Track multiple repositories"
-    run_test_output "repos (no args)" "$CLAW_BIN repos" "Track multiple repositories"
-
-    # List (empty)
-    run_test_output "repos list (empty)" "$CLAW_BIN repos list" "No repos tracked"
-    run_test_output "repos ls" "$CLAW_BIN repos ls" "No repos tracked"
-
-    # Add
-    run_test_output "repos add valid" "$CLAW_BIN repos add owner/repo" "Added: owner/repo"
-    run_test_output "repos add duplicate" "$CLAW_BIN repos add owner/repo" "Already tracking"
-    run_test "repos add invalid (no slash)" "$CLAW_BIN repos add invalid-repo" 1
-    run_test "repos add invalid (path)" "$CLAW_BIN repos add /path/to/repo" 1
-    run_test "repos add missing arg" "$CLAW_BIN repos add" 1
-
-    # List (with items)
-    run_test_output "repos list (with items)" "$CLAW_BIN repos list" "owner/repo"
-
-    # Remove
-    run_test_output "repos remove" "$CLAW_BIN repos remove owner/repo" "Removed: owner/repo"
-    run_test_output "repos rm (alias)" "$CLAW_BIN repos add test/repo && $CLAW_BIN repos rm test/repo" "Removed"
-
-    # Invalid subcommand
-    run_test "repos invalid subcommand" "$CLAW_BIN repos invalid" 1
-}
-
 test_project_commands() {
     echo ""
     echo "${CYAN}=== Project Commands ===${NC}"
@@ -290,10 +259,6 @@ test_edge_cases() {
     run_test_output "add-repo with spaces in path" "$CLAW_BIN project add-repo \"$space_dir\" --project test-proj" "Added to project"
     cd "$TEST_PROJECT"
 
-    # Empty repos.json recovery
-    echo "invalid json" > "$TEST_CLAW_HOME/repos.json"
-    run_test "corrupted repos.json recovery" "$CLAW_BIN repos list" 0
-
     # Multiple flags combined
     run_test_output "combined short flags work" "$CLAW_BIN -v" "claw v"
 }
@@ -339,7 +304,6 @@ main() {
     setup_test_env
 
     test_main_commands
-    test_repos_commands
     test_project_commands
     test_templates_commands
     test_issues_command

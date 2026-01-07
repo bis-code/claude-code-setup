@@ -10,6 +10,40 @@ CLAW_HOME="${CLAW_HOME:-$HOME/.claw}"
 PROJECTS_DIR="$CLAW_HOME/projects"
 
 # ============================================================================
+# Git Utilities
+# ============================================================================
+
+# Get current repo from git remote (owner/repo format)
+# Usage: get_current_repo
+get_current_repo() {
+    if ! git rev-parse --git-dir &>/dev/null; then
+        return 0
+    fi
+
+    local remote_url
+    remote_url=$(git remote get-url origin 2>/dev/null) || return 0
+
+    # Extract owner/repo from various URL formats
+    # https://github.com/owner/repo.git
+    # git@github.com:owner/repo.git
+    # https://github.com/owner/repo
+    local repo=""
+
+    # Handle HTTPS URLs
+    if [[ "$remote_url" =~ github\.com/([^/]+)/([^/]+) ]]; then
+        repo="${BASH_REMATCH[1]}/${BASH_REMATCH[2]}"
+    # Handle SSH URLs
+    elif [[ "$remote_url" =~ github\.com:([^/]+)/([^/]+) ]]; then
+        repo="${BASH_REMATCH[1]}/${BASH_REMATCH[2]}"
+    fi
+
+    # Remove .git suffix if present
+    repo="${repo%.git}"
+
+    echo "$repo"
+}
+
+# ============================================================================
 # Project Configuration
 # ============================================================================
 

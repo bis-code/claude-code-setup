@@ -2,10 +2,9 @@
 # Real-world integration tests
 # Tests that claw works correctly in realistic scenarios
 #
-# Note: Tests for removed commands (claw init, claw detect, claw upgrade,
-# claw agents, claw leann, claw multi-repo) have been removed.
 # Current claw is a simplified claude wrapper with:
-# - repos add/remove/list/clear
+# - project create/add-repo/show/issues
+# - templates list/install
 # - issues
 # - --setup-leann, --update
 
@@ -56,42 +55,6 @@ teardown() {
 }
 
 # ============================================================================
-# Repos Workflow Tests
-# ============================================================================
-
-@test "repos workflow: add, list, remove" {
-    run "$PROJECT_ROOT/bin/claw" repos add owner/repo1
-    assert_success
-
-    run "$PROJECT_ROOT/bin/claw" repos add owner/repo2
-    assert_success
-
-    run "$PROJECT_ROOT/bin/claw" repos list
-    assert_success
-    assert_output --partial "owner/repo1"
-    assert_output --partial "owner/repo2"
-
-    run "$PROJECT_ROOT/bin/claw" repos remove owner/repo1
-    assert_success
-
-    run "$PROJECT_ROOT/bin/claw" repos list
-    assert_success
-    assert_output --partial "owner/repo2"
-    refute_output --partial "owner/repo1"
-}
-
-@test "repos: validates format" {
-    run "$PROJECT_ROOT/bin/claw" repos add invalidformat
-    assert_failure
-
-    run "$PROJECT_ROOT/bin/claw" repos add /noslash
-    assert_failure
-
-    run "$PROJECT_ROOT/bin/claw" repos add valid/format
-    assert_success
-}
-
-# ============================================================================
 # Edge Cases
 # ============================================================================
 
@@ -128,17 +91,6 @@ teardown() {
     cd "$TMP_DIR/git-project"
     git init -q
 
-    run "$PROJECT_ROOT/bin/claw" repos list
+    run "$PROJECT_ROOT/bin/claw" --version
     assert_success
-}
-
-@test "git context: repos shows current repo when in git dir with remote" {
-    mkdir -p "$TMP_DIR/git-project"
-    cd "$TMP_DIR/git-project"
-    git init -q
-    git remote add origin https://github.com/owner/repo.git
-
-    run "$PROJECT_ROOT/bin/claw" repos list
-    assert_success
-    # Should show repo from remote (deduced from git remote)
 }

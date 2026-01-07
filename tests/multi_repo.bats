@@ -246,23 +246,6 @@ EOF
     assert_output --partial "org/frontend"
 }
 
-@test "repos: show_issues_summary with --json returns JSON" {
-    source "$PROJECT_ROOT/lib/repos.sh"
-
-    # Mock gh to return test data
-    function gh() {
-        echo '[{"number": 1, "title": "Test issue", "labels": [], "repository": {"nameWithOwner": "test/repo"}}]'
-    }
-    export -f gh
-
-    repos_add "test/repo"
-
-    run show_issues_summary --json
-    assert_success
-    # Should output JSON
-    assert_output --partial "number"
-}
-
 # ============================================================================
 # Executor Multi-Repo Tests
 # ============================================================================

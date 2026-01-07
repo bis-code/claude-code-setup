@@ -46,55 +46,11 @@ teardown() {
     assert_output --partial "Usage:"
 }
 
-@test "claw: help includes multi-repo section" {
+@test "claw: help includes project management section" {
     run "$PROJECT_ROOT/bin/claw" --help
     assert_success
-    # Updated to match new help text - project management is primary, repos is legacy
     assert_output --partial "Project management"
     assert_output --partial "claw project"
-    assert_output --partial "Legacy multi-repo"
-    assert_output --partial "claw repos"
-}
-
-# ============================================================================
-# Repos Command Integration
-# ============================================================================
-
-@test "claw: repos --help shows repos usage" {
-    run "$PROJECT_ROOT/bin/claw" repos --help
-    assert_success
-    assert_output --partial "claw repos"
-    assert_output --partial "add"
-    assert_output --partial "remove"
-    assert_output --partial "list"
-}
-
-@test "claw: repos add works" {
-    run "$PROJECT_ROOT/bin/claw" repos add owner/repo
-    assert_success
-    assert_output --partial "Added: owner/repo"
-}
-
-@test "claw: repos list shows added repos" {
-    "$PROJECT_ROOT/bin/claw" repos add owner/repo
-
-    run "$PROJECT_ROOT/bin/claw" repos list
-    assert_success
-    assert_output --partial "owner/repo"
-}
-
-@test "claw: repos remove works" {
-    "$PROJECT_ROOT/bin/claw" repos add owner/repo
-
-    run "$PROJECT_ROOT/bin/claw" repos remove owner/repo
-    assert_success
-    assert_output --partial "Removed: owner/repo"
-}
-
-@test "claw: repos list shows empty when none tracked" {
-    run "$PROJECT_ROOT/bin/claw" repos list
-    assert_success
-    assert_output --partial "No repos tracked"
 }
 
 # ============================================================================
@@ -113,7 +69,6 @@ teardown() {
 # ============================================================================
 
 @test "claw: banner function exists and runs" {
-    source "$PROJECT_ROOT/lib/repos.sh"
     source "$PROJECT_ROOT/bin/claw"
 
     run show_startup_banner
@@ -123,7 +78,6 @@ teardown() {
 }
 
 @test "claw: banner shows version" {
-    source "$PROJECT_ROOT/lib/repos.sh"
     source "$PROJECT_ROOT/bin/claw"
 
     run show_startup_banner
@@ -133,7 +87,6 @@ teardown() {
 }
 
 @test "claw: banner shows commands section" {
-    source "$PROJECT_ROOT/lib/repos.sh"
     source "$PROJECT_ROOT/bin/claw"
 
     run show_startup_banner
@@ -144,7 +97,6 @@ teardown() {
 }
 
 @test "claw: banner shows status section" {
-    source "$PROJECT_ROOT/lib/repos.sh"
     source "$PROJECT_ROOT/bin/claw"
 
     run show_startup_banner
@@ -153,27 +105,20 @@ teardown() {
     assert_output --partial "Claude:"
 }
 
-@test "claw: banner shows tracked repos count" {
-    source "$PROJECT_ROOT/lib/repos.sh"
-    repos_add "owner/repo1"
-    repos_add "owner/repo2"
-
-    source "$PROJECT_ROOT/bin/claw"
-
-    run show_startup_banner
-    assert_success
-    assert_output --partial "2 repo(s)"
-}
-
 @test "claw: banner shows repo info when in git repo" {
-    source "$PROJECT_ROOT/lib/repos.sh"
     source "$PROJECT_ROOT/lib/projects.sh"
+
+    # Create a git repo for this test
+    mkdir -p "$TMP_DIR/test-repo"
+    cd "$TMP_DIR/test-repo"
+    git init -q
+    git remote add origin https://github.com/owner/repo.git
+
     source "$PROJECT_ROOT/bin/claw"
 
     run show_startup_banner
     assert_success
-    # When in a git repo, shows repo info (not "No repos tracked" anymore)
-    # The banner now shows project or repo info, legacy tracked repos only shown when present
+    # When in a git repo, shows repo info
     assert_output --partial "Repo:"
 }
 
@@ -182,7 +127,6 @@ teardown() {
 # ============================================================================
 
 @test "claw: exit message function exists" {
-    source "$PROJECT_ROOT/lib/repos.sh"
     source "$PROJECT_ROOT/bin/claw"
 
     run show_exit_message "test-session-id"
@@ -191,7 +135,6 @@ teardown() {
 }
 
 @test "claw: exit message shows session ID" {
-    source "$PROJECT_ROOT/lib/repos.sh"
     source "$PROJECT_ROOT/bin/claw"
 
     run show_exit_message "abc123-session"
@@ -200,7 +143,6 @@ teardown() {
 }
 
 @test "claw: exit message shows resume instructions" {
-    source "$PROJECT_ROOT/lib/repos.sh"
     source "$PROJECT_ROOT/bin/claw"
 
     run show_exit_message "test-id"

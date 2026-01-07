@@ -112,7 +112,6 @@ teardown() {
 }
 
 @test "integration: claw startup banner shows project info" {
-    source "$PROJECT_ROOT/lib/repos.sh"
     source "$PROJECT_ROOT/lib/projects.sh"
 
     # Create project and add current repo (simulated)
@@ -164,37 +163,6 @@ teardown() {
 }
 
 # ============================================================================
-# Legacy Repos + Project Coexistence
-# ============================================================================
-
-@test "integration: legacy repos and project repos coexist" {
-    source "$PROJECT_ROOT/lib/repos.sh"
-    source "$PROJECT_ROOT/lib/projects.sh"
-
-    # Add legacy tracked repo
-    repos_add "legacy/repo"
-
-    # Create project with repos
-    project_create "modern-proj"
-
-    mkdir -p "$TMP_DIR/modern-repo"
-    cd "$TMP_DIR/modern-repo"
-    git init -q
-    git remote add origin "https://github.com/org/modern.git"
-    project_add_repo "$TMP_DIR/modern-repo" --project modern-proj
-
-    # Verify legacy repos still work
-    run repos_list
-    assert_success
-    assert_output --partial "legacy/repo"
-
-    # Verify project repos work
-    run get_project_github_repos "modern-proj"
-    assert_success
-    assert_output --partial "org/modern"
-}
-
-# ============================================================================
 # Template Installation Tests (Unit Level)
 # ============================================================================
 
@@ -212,7 +180,6 @@ teardown() {
 # ============================================================================
 
 @test "integration: fetch_project_issues aggregates from project repos" {
-    source "$PROJECT_ROOT/lib/repos.sh"
     source "$PROJECT_ROOT/lib/projects.sh"
 
     # Create project with repos

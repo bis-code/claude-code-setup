@@ -294,7 +294,6 @@ teardown() {
 
     # This test verifies ensure_setup calls ensure_leann_setup
     # Full integration test would need mocking claude command
-    source "$PROJECT_ROOT/lib/repos.sh"
     source "$PROJECT_ROOT/bin/claw"
 
     # Just verify the function exists

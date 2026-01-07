@@ -114,46 +114,6 @@ EOF
     assert_output "ok"
 }
 
-@test "lib/repos.sh: can be sourced" {
-    run bash -c "source '$PROJECT_ROOT/lib/repos.sh' && echo 'ok'"
-    assert_success
-    assert_output "ok"
-}
-
-# ============================================================================
-# Repos Edge Cases
-# ============================================================================
-
-@test "repos: handles special characters in repo name" {
-    source "$PROJECT_ROOT/lib/repos.sh"
-    # Standard repo names should work
-    run repos_add "my-org/my-repo"
-    assert_success
-}
-
-@test "repos: rejects invalid format without slash" {
-    source "$PROJECT_ROOT/lib/repos.sh"
-    # Should reject repo without owner/repo format
-    run repos_add "invalid-no-slash"
-    assert_failure
-}
-
-@test "repos: handles very long repo names" {
-    source "$PROJECT_ROOT/lib/repos.sh"
-    local long_name="org/$(printf 'a%.0s' {1..200})"
-    run repos_add "$long_name"
-    # Should still work - GitHub allows long names
-    assert_success
-}
-
-@test "repos: list with corrupted json recovers gracefully" {
-    source "$PROJECT_ROOT/lib/repos.sh"
-    echo "not valid json" > "$CLAW_HOME/repos.json"
-    run repos_list
-    # Should not crash
-    assert_success
-}
-
 # ============================================================================
 # CLI Edge Cases
 # ============================================================================
@@ -164,23 +124,5 @@ EOF
     assert_output --partial "claw v"
 }
 
-@test "claw repos: unknown subcommand shows error" {
-    run "$PROJECT_ROOT/bin/claw" repos unknown-subcommand
-    assert_failure
-    assert_output --partial "Unknown repos command"
-}
-
-@test "claw repos add: requires argument" {
-    run "$PROJECT_ROOT/bin/claw" repos add
-    assert_failure
-    assert_output --partial "Usage"
-}
-
-@test "claw repos remove: requires argument" {
-    run "$PROJECT_ROOT/bin/claw" repos remove
-    assert_failure
-    assert_output --partial "Usage"
-}
-
-# Note: Tests for old claw commands (init, detect, agents) removed
-# The simplified claw is a drop-in replacement for claude with multi-repo support
+# Note: Tests for old claw commands (init, detect, agents, repos) removed
+# The simplified claw is a drop-in replacement for claude with project management
