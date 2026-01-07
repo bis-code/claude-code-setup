@@ -269,7 +269,7 @@ Usage:
   claw repos list                 List all tracked repos
   claw repos clear                Clear all tracked repos
 
-When running /plan-day or /ship-day, claw aggregates across:
+When running /plan-day, /auto-pilot, or /ship-day, claw aggregates across:
   1. Current directory's repo (from git remote)
   2. All tracked repos
 
