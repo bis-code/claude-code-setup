@@ -258,6 +258,27 @@ EOF
 # ============================================================================
 
 main() {
+    # Track flags to pass to claude
+    local SKIP_PERMISSIONS=false
+    local CLAUDE_ARGS=()
+
+    # Pre-process arguments to extract claw-specific flags
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --yolo|-y)
+                SKIP_PERMISSIONS=true
+                shift
+                ;;
+            *)
+                CLAUDE_ARGS+=("$1")
+                shift
+                ;;
+        esac
+    done
+
+    # Restore positional parameters for backward compatibility
+    set -- "${CLAUDE_ARGS[@]}"
+
     # Handle claw-specific commands
     case "${1:-}" in
         --version|-v|version)
@@ -278,6 +299,11 @@ Examples:
   claw "fix the bug"        # Start with a prompt
   claw --resume <id>        # Resume specific session
   claw --continue           # Continue last session
+  claw --yolo "fix it"      # Skip all permission prompts
+
+Options:
+  --yolo, -y                Skip all permission prompts (DANGEROUS)
+                            Passes --dangerously-skip-permissions to claude
 
 Multi-repo tracking:
   claw repos add <owner/repo>   Add a repo to track
@@ -345,9 +371,17 @@ EOF
     local session_before
     session_before=$(get_last_session_id)
 
+    # Build claude command with flags
+    local claude_cmd=("claude")
+    if [[ "$SKIP_PERMISSIONS" == "true" ]]; then
+        echo -e "${RED}${BOLD}⚠ YOLO MODE${NC}: Running with --dangerously-skip-permissions"
+        echo ""
+        claude_cmd+=("--dangerously-skip-permissions")
+    fi
+
     # Run claude (not exec, so we can show exit message)
     local exit_code=0
-    claude "$@" || exit_code=$?
+    "${claude_cmd[@]}" "$@" || exit_code=$?
 
     # Get session ID after running
     local session_after
