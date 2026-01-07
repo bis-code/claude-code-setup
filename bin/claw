@@ -24,6 +24,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LIB_DIR="${SCRIPT_DIR}/../lib"
 source "${LIB_DIR}/repos.sh"
 source "${LIB_DIR}/leann-mcp.sh"
+source "${LIB_DIR}/issue-templates.sh"
 
 # ============================================================================
 # Colors
@@ -206,6 +207,14 @@ handle_repos_command() {
                 exit 1
             fi
             repos_add "$1"
+
+            # Offer to configure issue templates
+            echo ""
+            read -p "Configure GitHub issue templates for this repo? [y/N] " -n 1 -r
+            echo
+            if [[ $REPLY =~ ^[Yy]$ ]]; then
+                handle_templates_command install "$1"
+            fi
             ;;
         remove|rm)
             if [[ -z "${1:-}" ]]; then
@@ -305,6 +314,11 @@ Options:
   --yolo, -y                Skip all permission prompts (DANGEROUS)
                             Passes --dangerously-skip-permissions to claude
 
+GitHub issue templates:
+  claw templates list           List available templates
+  claw templates install <repo> Install templates to a repo
+  claw templates --help         More info
+
 Multi-repo tracking:
   claw repos add <owner/repo>   Add a repo to track
   claw repos list               List tracked repos
@@ -348,6 +362,12 @@ EOF
             # Fetch issues from all repos
             shift
             show_issues_summary "$@"
+            exit $?
+            ;;
+        templates)
+            # GitHub issue template management
+            shift
+            handle_templates_command "$@"
             exit $?
             ;;
     esac
