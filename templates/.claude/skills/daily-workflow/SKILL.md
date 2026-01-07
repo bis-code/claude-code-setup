@@ -12,6 +12,7 @@ Autonomous daily development workflow with multi-agent AI collaboration.
 | `/next` | Pick up the next issue from today's plan | Manual |
 | `/done` | Mark current issue as complete | Manual |
 | `/pivot` | Handle mid-day changes (blocker, idea, scope, urgent) | Manual |
+| `/summary` | Show all completed work today (for verification) | Manual |
 | `/ship-day` | End the day - squash commits, create PR | Manual |
 
 ## Autonomy Levels
@@ -46,9 +47,9 @@ Daily state is stored in `.claude/daily/YYYY-MM-DD.md`
 
 ### Manual Mode
 ```
-/plan-day ──▶ /next ──▶ work ──▶ /done ──▶ /ship-day
-                │         │
-                └─ /pivot ┘
+/plan-day ──▶ /next ──▶ work ──▶ /done ──▶ /summary ──▶ /ship-day
+                │         │                    │
+                └─ /pivot ┘                    └── verify completed
 ```
 
 ### Multi-Agent Mode

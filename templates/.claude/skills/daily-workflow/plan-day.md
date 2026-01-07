@@ -310,6 +310,7 @@ started: 09:00
 | `/next` | Move to next queued issue |
 | `/done` | Mark current issue complete, update state |
 | `/pivot` | Mid-day replan (preserves context) |
+| `/summary` | Review all completed work before shipping |
 | `/validate` | Run QA checks before shipping |
 | `/ship-day` | End of day summary and commit |
 

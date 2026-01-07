@@ -11,6 +11,8 @@ Mark the current issue as complete.
 5. Updates GitHub label
 6. Suggests next issue
 
+**Note:** Completed items are tracked in `~/.claw/daily/YYYY-MM-DD.md` for `/summary` to display (spans all tracked repos).
+
 ## Invocation
 
 ```
