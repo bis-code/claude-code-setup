@@ -6,9 +6,15 @@
 
 set -euo pipefail
 
-# Template directory
+# Template directory (check both dev and installed locations)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ISSUE_TEMPLATES_DIR="${SCRIPT_DIR}/../templates/github-issue-templates"
+if [[ -d "${SCRIPT_DIR}/templates/github-issue-templates" ]]; then
+    # Homebrew installed location: lib/claw/templates/
+    ISSUE_TEMPLATES_DIR="${SCRIPT_DIR}/templates/github-issue-templates"
+else
+    # Dev location: lib/../templates/
+    ISSUE_TEMPLATES_DIR="${SCRIPT_DIR}/../templates/github-issue-templates"
+fi
 
 # Available templates
 AVAILABLE_TEMPLATES=(
