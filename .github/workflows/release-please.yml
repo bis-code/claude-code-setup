@@ -188,3 +188,49 @@ jobs:
             });
 
             console.log('Homebrew tap updated!');
+
+  # Sync VERSION variables in source files
+  sync-version:
+    needs: [release-please, build-release]
+    if: ${{ needs.release-please.outputs.release_created }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Update VERSION in source files
+        run: |
+          VERSION="${{ needs.release-please.outputs.version }}"
+          echo "Updating VERSION to $VERSION"
+
+          # Update bin/claw
+          sed -i "s/VERSION=\"[^\"]*\"/VERSION=\"$VERSION\"/" bin/claw
+
+          # Update install.sh
+          sed -i "s/VERSION=\"[^\"]*\"/VERSION=\"$VERSION\"/" install.sh
+
+          # Verify changes
+          echo "bin/claw VERSION:"
+          grep "^VERSION=" bin/claw || grep 'VERSION="' bin/claw | head -1
+
+          echo "install.sh VERSION:"
+          grep "^VERSION=" install.sh || grep 'VERSION="' install.sh | head -1
+
+      - name: Commit and push VERSION sync
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email github-actions[bot]@users.noreply.github.com
+
+          # Check if there are changes to commit
+          if git diff --quiet bin/claw install.sh; then
+            echo "No VERSION changes needed"
+          else
+            git add bin/claw install.sh
+            git commit -m "chore: sync VERSION to ${{ needs.release-please.outputs.version }} [skip ci]"
+            git push origin main
+            echo "VERSION synced to ${{ needs.release-please.outputs.version }}"
+          fi
