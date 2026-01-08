@@ -404,3 +404,62 @@ reinstall_leann_mcp() {
     # Run setup
     ensure_leann_setup
 }
+
+# ============================================================================
+# Auto-Indexing for Current Project
+# ============================================================================
+
+# Get project name from current directory
+get_project_index_name() {
+    local dir="${1:-$(pwd)}"
+    # Use git repo root name if in a git repo
+    if git rev-parse --show-toplevel &>/dev/null; then
+        basename "$(git rev-parse --show-toplevel)"
+    else
+        basename "$dir"
+    fi
+}
+
+# Check if current project is indexed
+is_project_indexed() {
+    local index_name
+    index_name=$(get_project_index_name)
+
+    # Check if leann list shows this index
+    if command -v leann &>/dev/null; then
+        leann list 2>/dev/null | grep -q "$index_name" && return 0
+    fi
+    return 1
+}
+
+# Auto-index current project if not already indexed
+ensure_project_indexed() {
+    # Skip if not in a git repo
+    if ! git rev-parse --git-dir &>/dev/null; then
+        return 0
+    fi
+
+    # Skip if leann not installed
+    if ! command -v leann &>/dev/null; then
+        return 0
+    fi
+
+    # Skip if already indexed
+    if is_project_indexed; then
+        return 0
+    fi
+
+    local index_name
+    index_name=$(get_project_index_name)
+    local project_root
+    project_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+
+    # Index in background to not block startup
+    echo -e "${CYAN}✶${NC} ${BOLD}Indexing project for semantic search...${NC}"
+
+    if leann index "$project_root" --name "$index_name" &>/dev/null; then
+        echo -e "${GREEN}✓${NC} Project indexed as '${index_name}'"
+    else
+        echo -e "${YELLOW}!${NC} ${GRAY}Indexing skipped (run 'leann index . --name $index_name' manually)${NC}"
+    fi
+}
