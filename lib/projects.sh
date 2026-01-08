@@ -510,6 +510,50 @@ project_generate_self_improve_workflow() {
         esac
     done
 
+    # Show prerequisite warning
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "PREREQUISITE: Claude Code GitHub Actions OAuth Setup"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    echo "Before generating workflows, you must configure Claude OAuth authentication."
+    echo "This enables Claude to run autonomously in GitHub Actions."
+    echo ""
+    echo "Quick Setup (Recommended):"
+    echo ""
+    echo "  1. Run Claude interactively:"
+    echo "     claude"
+    echo ""
+    echo "  2. Inside Claude, run:"
+    echo "     /install-github-app"
+    echo ""
+    echo "  3. Follow the prompts to:"
+    echo "     - Install the Claude GitHub App on your repos/org"
+    echo "     - Configure CLAUDE_CODE_OAUTH_TOKEN secret"
+    echo ""
+    echo "This will set up:"
+    echo "  ✓ OAuth authentication for all repos"
+    echo "  ✓ No API keys required"
+    echo "  ✓ Works at organization level"
+    echo "  ✓ Automatic PR reviews and code improvements"
+    echo ""
+    echo "Verify setup:"
+    echo "  gh secret list | grep CLAUDE_CODE_OAUTH_TOKEN"
+    echo ""
+    echo "For manual setup or more details:"
+    echo "  https://code.claude.com/docs/en/github-actions"
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+
+    # Ask for confirmation
+    read -p "Have you run '/install-github-app' in Claude? (yes/no): " response
+    if [[ ! "$response" =~ ^[Yy](es)?$ ]]; then
+        echo ""
+        echo "Please run 'claude' then '/install-github-app' first."
+        echo "This sets up OAuth authentication for all your repos."
+        return 1
+    fi
+
     local project_name
     project_name=$(get_current_project)
 
@@ -518,6 +562,7 @@ project_generate_self_improve_workflow() {
         return 1
     fi
 
+    echo ""
     echo "Generating autonomous self-improvement workflow for project: $project_name"
     echo ""
 
@@ -561,11 +606,19 @@ project_generate_self_improve_workflow() {
     echo "  - Implements fixes autonomously with TDD"
     echo "  - Creates PR automatically when done"
     echo ""
-    echo "Setup required:"
+    echo "Next steps:"
     echo "  1. Review generated workflows in each repo"
-    echo "  2. Add CLAUDE_API_KEY secret to each GitHub repo:"
-    echo "     gh secret set CLAUDE_API_KEY --repo <owner/repo>"
-    echo "  3. Commit and push the workflows"
+    echo "  2. Verify CLAUDE_CODE_OAUTH_TOKEN is accessible:"
+    echo "     gh secret list"
+    echo "  3. Commit and push the workflows:"
+    echo "     git add .github/workflows/self-improve.yml"
+    echo "     git commit -m 'feat: add autonomous self-improvement workflow'"
+    echo "     git push"
+    echo ""
+    echo "The workflow will run daily at 2 AM UTC and:"
+    echo "  - Use your existing OAuth authentication (no new secrets needed!)"
+    echo "  - Create PRs automatically when improvements are found"
+    echo "  - Can be triggered manually via GitHub Actions UI"
 }
 
 # ============================================================================

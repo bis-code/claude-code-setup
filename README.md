@@ -94,18 +94,34 @@ claw
 
 Enable daily automated code quality improvements for your entire project:
 
+### Prerequisites
+
+First, set up Claude OAuth authentication (one-time setup):
+
+```bash
+# Run Claude interactively
+claude
+
+# Inside Claude, install GitHub App
+/install-github-app
+```
+
+This configures `CLAUDE_CODE_OAUTH_TOKEN` for your repos (org-level or per-repo).
+
+### Generate Workflows
+
 ```bash
 # Generate workflows for all repos in your project
 cd ~/projects/my-saas/api  # Any repo in the project
 claw project generate-self-improve-workflow
 
-# Add GitHub secret to each repo
-gh secret set CLAUDE_API_KEY --repo myorg/api
-gh secret set CLAUDE_API_KEY --repo myorg/dashboard
-gh secret set CLAUDE_API_KEY --repo myorg/worker
+# Review and commit workflows
+cd ~/projects/my-saas/api
+git add .github/workflows/self-improve.yml
+git commit -m "feat: add autonomous self-improvement"
+git push
 
-# Commit and push workflows
-# Each repo now has .github/workflows/self-improve.yml
+# Repeat for other repos (or use generate-self-improve-workflow from any repo)
 ```
 
 ### What It Does
