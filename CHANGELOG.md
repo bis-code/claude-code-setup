@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.4.0](https://github.com/bis-code/claw/compare/v1.3.11...v1.4.0) (2026-01-09)
+
+
+### Features
+
+* add autonomous self-improvement system ([a3bd13f](https://github.com/bis-code/claw/commit/a3bd13fda787927081796be3890b44217cdeac00))
+* add autonomous self-improvement with workflow generation ([57bb59e](https://github.com/bis-code/claw/commit/57bb59ebe0bf5c34fad6da6f241686608aa9de1a))
+* integrate OAuth authentication for self-improvement workflows ([d1fa300](https://github.com/bis-code/claw/commit/d1fa3005a699a1cbd5c302fd2e7d0c43b691dc00))
+
 ## [1.2.0](https://github.com/bis-code/claw/compare/v1.1.5...v1.2.0) (2026-01-07)
 
 
