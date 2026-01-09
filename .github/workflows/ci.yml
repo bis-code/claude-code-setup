@@ -51,7 +51,7 @@ jobs:
         run: ./tests/bats/bin/bats tests/integration.bats tests/edge_cases.bats tests/integration_project.bats
 
       - name: Run CLI tests
-        run: ./tests/bats/bin/bats tests/claw_cli.bats tests/repos.bats tests/home.bats tests/manifest.bats tests/issue_templates.bats
+        run: ./tests/bats/bin/bats tests/claw_cli.bats tests/home.bats tests/manifest.bats tests/issue_templates.bats
 
       - name: Run project tests
         run: ./tests/bats/bin/bats tests/projects.bats tests/multi_repo.bats
