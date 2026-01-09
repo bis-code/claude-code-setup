@@ -2,11 +2,6 @@ name: Staging Release (Test Homebrew)
 
 on:
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'RC version (e.g., 1.4.2-rc1)'
-        required: true
-        type: string
 
 jobs:
   create-rc:
@@ -16,11 +11,20 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        ref: develop
+        with:
+          ref: develop
+
+      - name: Generate version from commit
+        id: version
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          VERSION="staging-${SHORT_SHA}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Generated version: ${VERSION}"
 
       - name: Create RC tag
         run: |
-          VERSION="${{ inputs.version }}"
+          VERSION="${{ steps.version.outputs.version }}"
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           git tag "v${VERSION}"
@@ -28,7 +32,7 @@ jobs:
 
       - name: Create tarball
         run: |
-          VERSION="${{ inputs.version }}"
+          VERSION="${{ steps.version.outputs.version }}"
           mkdir -p "/tmp/claw-${VERSION}"
           cp -r bin lib templates install.sh LICENSE "/tmp/claw-${VERSION}/"
           cd /tmp
@@ -37,7 +41,7 @@ jobs:
       - name: Calculate SHA256
         id: sha
         run: |
-          VERSION="${{ inputs.version }}"
+          VERSION="${{ steps.version.outputs.version }}"
           SHA256=$(shasum -a 256 "/tmp/claw-${VERSION}.tar.gz" | awk '{print $1}')
           echo "sha256=$SHA256" >> $GITHUB_OUTPUT
           echo "SHA256: $SHA256"
@@ -46,7 +50,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          VERSION="${{ inputs.version }}"
+          VERSION="${{ steps.version.outputs.version }}"
           gh release create "v${VERSION}" \
             "/tmp/claw-${VERSION}.tar.gz" \
             --title "v${VERSION} - Release Candidate" \

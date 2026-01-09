@@ -158,17 +158,19 @@ Before creating an official release, you can test the Homebrew installation usin
 
 ### Create RC for Testing
 1. Go to: **Actions** → **Staging Release (Test Homebrew)** → **Run workflow**
-2. Enter RC version (e.g., `1.4.2-rc1`)
+2. Click "Run workflow" button (no inputs needed - version auto-generated from commit hash)
 3. Workflow creates:
-   - RC tag on `develop` branch
+   - RC tag on `develop` branch (e.g., `v-staging-a1b2c3d`)
    - Pre-release on GitHub
    - Tarball with SHA256
 
+**Version format:** `staging-<short-commit-hash>` (e.g., `staging-a1b2c3d`)
+
 ### Test the RC
 ```bash
-# Install RC version
+# Install RC version (check Actions output for exact version)
 brew uninstall claw 2>/dev/null || true
-brew install https://github.com/bis-code/claw/releases/download/v1.4.2-rc1/claw-1.4.2-rc1.tar.gz
+brew install https://github.com/bis-code/claw/releases/download/v-staging-a1b2c3d/claw-staging-a1b2c3d.tar.gz
 
 # Test functionality
 claw --version
@@ -182,16 +184,16 @@ brew uninstall claw
 ### After Testing
 If tests pass:
 ```bash
-# Clean up RC
-gh release delete v1.4.2-rc1 --yes
-git push origin :v1.4.2-rc1
+# Clean up RC (replace version with actual staging version)
+gh release delete v-staging-a1b2c3d --yes
+git push origin :v-staging-a1b2c3d
 
 # Proceed with official release (Steps 1-6 above)
 ```
 
 If tests fail:
 - Fix issues on `develop`
-- Create new RC (e.g., `1.4.2-rc2`)
+- Create new RC by running the workflow again (gets new commit hash automatically)
 - Test again
 
 ---
