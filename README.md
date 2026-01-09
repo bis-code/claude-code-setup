@@ -96,19 +96,10 @@ Enable daily automated code quality improvements for your entire project:
 
 ### Prerequisites
 
-Set up Claude OAuth authentication for your repositories:
+Configure Claude OAuth for each repository in your project:
 
-**Option 1: Organization-Wide (Recommended)**
 ```bash
-# Run once, covers all repos in your org
-claude
-/install-github-app
-# Select "organization" when prompted
-```
-
-**Option 2: Per-Repository**
-```bash
-# Run for EACH repository in your project
+# For EACH repository, run:
 cd ~/projects/my-saas/api
 claude
 /install-github-app
@@ -117,10 +108,10 @@ cd ~/projects/my-saas/dashboard
 claude
 /install-github-app
 
-# Repeat for each repo...
+# Repeat for all repos in your project...
 ```
 
-This configures `CLAUDE_CODE_OAUTH_TOKEN` secret that workflows will use.
+This sets up `CLAUDE_CODE_OAUTH_TOKEN` that workflows will use.
 
 ### Generate Workflows
 

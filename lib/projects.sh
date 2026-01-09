@@ -512,54 +512,38 @@ project_generate_self_improve_workflow() {
 
     # Show prerequisite warning
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "PREREQUISITE: Claude Code GitHub Actions OAuth Setup"
+    echo "PREREQUISITE: Claude Code OAuth Setup Required"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
-    echo "Before generating workflows, you must configure Claude OAuth authentication"
-    echo "for EACH repository (or once at organization level)."
+    echo "Before generating workflows, configure OAuth for each repository:"
     echo ""
-    echo "Setup Required (choose one approach):"
+    echo "For EACH repository in your project:"
     echo ""
-    echo "━━━ Approach 1: Per-Repository Setup ━━━"
-    echo "  For EACH repository in your project:"
-    echo ""
-    echo "  1. Navigate to the repo:"
+    echo "  1. Navigate to the repository:"
     echo "     cd ~/projects/my-project/repo-name"
     echo ""
     echo "  2. Run Claude interactively:"
     echo "     claude"
     echo ""
-    echo "  3. Inside Claude, run:"
+    echo "  3. Install GitHub App:"
     echo "     /install-github-app"
     echo ""
-    echo "  4. Follow prompts to install GitHub App for this repo"
-    echo ""
-    echo "  5. Verify setup:"
+    echo "  4. Verify setup:"
     echo "     gh secret list | grep CLAUDE_CODE_OAUTH_TOKEN"
     echo ""
-    echo "  6. Repeat for other repos in your project"
+    echo "  5. Repeat for all repos in your project"
     echo ""
-    echo "━━━ Approach 2: Organization-Wide Setup (Easier!) ━━━"
-    echo "  Install once, covers all repos:"
-    echo ""
-    echo "  1. Run: claude"
-    echo "  2. Run: /install-github-app"
-    echo "  3. When prompted, install at ORGANIZATION level"
-    echo "  4. All repos in org will have access automatically"
-    echo ""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo ""
-    echo "Documentation: https://code.claude.com/docs/en/github-actions"
+    echo "This configures CLAUDE_CODE_OAUTH_TOKEN that workflows use."
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
 
     # Ask for confirmation
-    read -p "Have you configured OAuth for all repos? (yes/no): " response
+    read -p "Have you run /install-github-app for all repos? (yes/no): " response
     if [[ ! "$response" =~ ^[Yy](es)?$ ]]; then
         echo ""
-        echo "Please set up OAuth authentication first."
-        echo "Recommended: Use organization-wide setup to cover all repos at once."
+        echo "Please configure OAuth for each repository first."
+        echo "Run: cd <repo> && claude, then /install-github-app"
         return 1
     fi
 
@@ -783,17 +767,10 @@ About autonomous self-improvement:
   - No human interaction required during execution
   - Uses OAuth authentication via Claude GitHub App
 
-Prerequisites (required for EACH repo):
-  1. Run Claude interactively:
-       claude
-
-  2. Install GitHub App for the repo:
-       /install-github-app
-
-  3. This sets up CLAUDE_CODE_OAUTH_TOKEN secret for the repo
-
-  Alternative - Organization-wide setup:
-    Install once at org level to cover all repos automatically
+Prerequisites:
+  For EACH repository in your project:
+    cd <repo> && claude, then run /install-github-app
+    This sets up CLAUDE_CODE_OAUTH_TOKEN secret
 EOF
             ;;
         *)
