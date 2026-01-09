@@ -310,19 +310,16 @@ claw --version  # ⚡ Instant!
 # Quick test
 make test
 
-# When done
-make dev-off
+# When done (optional - or just leave dev mode on)
+make install  # Returns to normal installation
 ```
 
 **Commands:**
-- `make dev` - Enable development mode (symlinks to working code)
-- `make dev-off` - Disable development mode
-- `make dev-status` - Check current mode
+- `make dev` - Enable dev mode (symlinks to working code)
 - `make test` - Quick functionality test
 - `make test-full` - Run full test suite
-- `make install` - Install claw (production)
+- `make install` - Install claw normally (disables dev mode)
 - `make clean` - Remove all installations
-- `make help` - Show all commands
 
 **Documentation:**
 - [LOCAL-TESTING.md](LOCAL-TESTING.md) - All testing methods

@@ -11,18 +11,14 @@ make dev        # Enable dev mode
 vim bin/claw    # Make changes
 claw --version  # Test instantly!
 make test       # Quick validation
-make dev-off    # Clean up
 ```
 
 **All make commands:**
 - `make dev` - Enable dev mode
-- `make dev-off` - Disable dev mode
-- `make dev-status` - Check status
 - `make test` - Quick test
 - `make test-full` - Run all tests
-- `make install` - Install normally
+- `make install` - Install normally (disables dev mode)
 - `make clean` - Remove all
-- `make help` - Show help
 
 ---
 
