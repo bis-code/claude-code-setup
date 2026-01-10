@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.5.0](https://github.com/bis-code/claw/compare/v1.4.1...v1.5.0) (2026-01-10)
+
+
+### Features
+
+* **auto:** consolidate commands + token optimization ([#29](https://github.com/bis-code/claw/issues/29)) ([0399641](https://github.com/bis-code/claw/commit/0399641ed42ed54b3fd03749aac7c84c297478d8))
+
+
+### Bug Fixes
+
+* **ci:** configure release-please to target main branch ([928c200](https://github.com/bis-code/claw/commit/928c20014108f1a0845ac6153bee37898333222e))
+
 ## [1.2.0](https://github.com/bis-code/claw/compare/v1.1.5...v1.2.0) (2026-01-07)
 
 
