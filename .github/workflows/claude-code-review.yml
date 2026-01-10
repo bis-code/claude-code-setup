@@ -1,14 +1,20 @@
 name: Claude Code Review
 
+# DISABLED - was costing money with Claude Code API usage
+# To re-enable, uncomment the "on:" section below
+# on:
+#   pull_request:
+#     types: [opened, synchronize, ready_for_review, reopened]
+#     # Optional: Only run on specific file changes
+#     # paths:
+#     #   - "src/**/*.ts"
+#     #   - "src/**/*.tsx"
+#     #   - "src/**/*.js"
+#     #   - "src/**/*.jsx"
+
+# Manual trigger only
 on:
-  pull_request:
-    types: [opened, synchronize, ready_for_review, reopened]
-    # Optional: Only run on specific file changes
-    # paths:
-    #   - "src/**/*.ts"
-    #   - "src/**/*.tsx"
-    #   - "src/**/*.js"
-    #   - "src/**/*.jsx"
+  workflow_dispatch:
 
 jobs:
   claude-review:
