@@ -27,6 +27,7 @@ jobs:
         id: release
         with:
           release-type: simple
+          target-branch: main
 
       - name: Checkout repository
         if: ${{ steps.release.outputs.release_created }}
