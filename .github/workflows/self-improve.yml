@@ -1,11 +1,12 @@
 name: Daily Self-Improvement
 
 on:
-  schedule:
-    # Run at 2 AM UTC daily
-    - cron: '0 2 * * *'
+  # Disabled - was costing money running daily
+  # schedule:
+  #   # Run at 2 AM UTC daily
+  #   - cron: '0 2 * * *'
 
-  # Allow manual trigger
+  # Allow manual trigger only
   workflow_dispatch:
     inputs:
       hours:
